@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Hour Count",
+  "description": "Simple timer extension that allows user to track the hours spent via a timer and save feature.",
+  "version": "1.0",
+  "author": "matthewerwin",
+  "action": {
+    "default_popup": "./popup.html",
+    "default_icon": "hello_extensions.png"
+  },
+  "background": {
+    "service_worker": "./background.js"
+  }
+}
