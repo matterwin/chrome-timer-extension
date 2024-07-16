@@ -2,14 +2,52 @@ console.log("-=-=-=-=-=-=-=-=-=-=-");
 console.log("Welcome to Hour Count");
 console.log("-=-=-=-=-=-=-=-=-=-=-");
 
-let runningClockInterval;
 let timeData = {
   startTime: 0,
-  stopTime: 0,
   currTime: 0,
-  runningClock: false,
+  stopTime: 0,
+  totalPausedDuration: 0,
   runningClockInterval: null
 };
+
+function updateDisplayedTime() {
+  const currentTime = Date.now();
+  timeData.currTime = currentTime;
+
+  const elapsed = (timeData.currTime - timeData.startTime) - timeData.totalPausedDuration;
+  const formattedTime = formatTime(elapsed / 1000);
+  chrome.runtime.sendMessage({ action: 'updateTime', time: formattedTime });
+}
+
+function startTimer() { 
+  if (timeData.stopTime) {
+    timeData.totalPausedDuration += (Date.now() - timeData.stopTime);
+    timeData.stopTime = 0;
+  } else {
+    timeData.startTime = Date.now();
+  }
+
+  timeData.runningClockInterval = setInterval(() => {
+    updateDisplayedTime();
+  }, 1000);  
+}
+
+function stopTimer() {
+  timeData.stopTime = Date.now();
+  clearInterval(timeData.runningClockInterval);
+}
+
+function resetTimer() {
+  clearInterval(timeData.runningClockInterval);
+  timeData = {
+    startTime: 0,
+    currTime: 0,
+    stopTime: 0,
+    totalPausedDuration: 0,
+    runningClockInterval: null
+  };
+  chrome.runtime.sendMessage({ action: 'updateTime', time: '00:00:00' });
+}
 
 function padZero(num) {
   return num < 10 ? '0' + num : num;
@@ -22,33 +60,18 @@ function formatTime(seconds) {
   return `${padZero(hours)}:${padZero(minutes)}:${padZero(sec)}`;
 }
 
-function updateDisplayedTime() {
-  const currentTime = Date.now();
-  timeData.currTime = currentTime;
-
-  const elapsed = timeData.currTime - timeData.startTime;
-  formatTime(elapsed / 1000);
-}
-
-function startTimer() { 
-  timeData.startTime = new Date();
-  timeData.runningClockInterval = setInterval(() => {
-    console.log(updateDisplayedTime);
-  }, 1000);  
-}
-
-function stopTimer() {
-  clearInterval(timeData.runningClockInterval);
-}
-
-function resetTimer() {
-  console.log('00:00:00');
-  clearInterval(timeData.runningClockInterval);
-  timeData = {
-    startTime: 0,
-    stopTime: 0,
-    currTime: 0,
-    runningClockInterval: null
-  };
-}
-
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === 'startTimer') {
+    startTimer();
+    sendResponse({status: 'started'});
+  } else if (message.action === 'stopTimer') {
+    stopTimer();
+    sendResponse({status: 'stopped'});
+  } else if (message.action === 'resetTimer') {
+    resetTimer();
+    sendResponse({status: 'reset'});
+  } else {
+    sendResponse({status: 'unknown action'});
+  }
+  return true; // Indicates that the response is asynchronous
+});
