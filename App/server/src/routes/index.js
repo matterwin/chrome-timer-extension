@@ -1,9 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const userRoutes = require('./userRoutes.js');
+const timerRoutes = require('./timerRoutes.js');
 
-// Use user routes
+// User routes
 router.use('/user', userRoutes);
+router.use('/timer', timerRoutes);
 
 module.exports = router;
 
