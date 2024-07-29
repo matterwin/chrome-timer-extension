@@ -29,8 +29,9 @@ const useBackgroundTimer = () => {
   const startTimer = () => portRef.current?.postMessage({ action: 'startTimer' });
   const stopTimer = () => portRef.current?.postMessage({ action: 'stopTimer' });
   const resetTimer = () => portRef.current?.postMessage({ action: 'resetTimer' });
+  const saveTimer = () => portRef.current?.postMessage({ action: 'saveTime' });
 
-  return { timer, currentlyRunning, setCurrentlyRunning, startTimer, stopTimer, resetTimer };
+  return { timer, currentlyRunning, setCurrentlyRunning, startTimer, stopTimer, resetTimer, saveTimer };
 };
 
 export default useBackgroundTimer;

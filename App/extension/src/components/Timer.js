@@ -10,6 +10,7 @@ const Timer = () => {
     startTimer, 
     stopTimer, 
     resetTimer,
+    saveTimer
   } = useBackgroundTimer();
 
   const handleStart = () => {
@@ -27,12 +28,17 @@ const Timer = () => {
     setCurrentlyRunning(false);
   };
 
+  const handleSave = () => {
+    saveTimer();
+  };
+
   return (
     <div>
       <h2 id="timerId">{timer}</h2>
       {!currentlyRunning && <button onClick={handleStart}>Start</button>}
       {currentlyRunning && <button onClick={handleStop}>Stop</button>}
       <button onClick={handleReset}>Reset</button> 
+      <button onClick={handleSave}>Save</button>
     </div>
   );
 };

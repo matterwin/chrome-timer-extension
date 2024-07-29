@@ -2,8 +2,17 @@ console.log("-=-=-=-=-=-=-=-=-=-=-");
 console.log("Welcome to Hour Count");
 console.log("-=-=-=-=-=-=-=-=-=-=-");
 
-let port = null;
+chrome.action.onClicked.addListener(() => {
+  console.log('Extension icon clicked');
+  chrome.windows.create({
+    url: chrome.runtime.getURL('index.html'),
+    type: 'popup',
+    width: 400,
+    height: 400
+  });
+});
 
+let port = null;
 chrome.runtime.onConnect.addListener((connectedPort) => {
   console.log("Port connected");
   port = connectedPort;
@@ -27,7 +36,7 @@ function handleMessage(msg) {
     resetTimer();
   } else if (msg.action === "getTime") {
     if (port) port.postMessage({ time: timeData.formattedTime });
-  }
+  } else if (msg.action === "saveTime") {}
 }
 
 function handleDisconnect() {
@@ -110,7 +119,16 @@ function getTime() {
 function setTime(time) {
   timeData.formattedTime = time;
   return getTime();
-};
+}
+
+function saveTime() {
+  chrome.windows.create({
+    url: './filesys.html',
+    type: 'popup', // Can be 'normal', 'popup', 'panel', 'app', or 'devtools'
+    width: 400,
+    height: 400
+  });
+}
 
 function padZero(num) {
   return num < 10 ? '0' + num : num;

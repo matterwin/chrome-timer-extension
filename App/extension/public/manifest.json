@@ -3,12 +3,12 @@
   "name": "Timer Chrome Extension",
   "version": "1.0",
   "description": "A Chrome extension built with React",
-  "action": {
-    "default_popup": "index.html"
-  },
+  "action": {},
   "permissions": [
     "activeTab",
-    "background"
+    "background",
+    "tabs",
+    "scripting"
   ],
   "background": {
     "service_worker": "background.js"
