@@ -10,7 +10,6 @@ import {
   getCurrent,
   getComponentStack,
 } from 'react-chrome-extension-router';
-import useBackgroundTimer from './hooks/useBackgroundTimer';
 
 import Login from './pages/auth/Login.js';
 import Timer from './components/Timer.js';
@@ -39,15 +38,13 @@ const One = () => {
   return (
     <div>
     <Link component={Login} props={{ message: 'I came from component one!' }}>
-      This is component One. Click to LoginIn.
+      Login
     </Link>
     </div>
   );
 };
 
 const App = () => {
-  const { timer, startTimer, stopTimer, resetTimer } = useBackgroundTimer();
-
   useEffect(() => {
     const { component, props } = getCurrent();
     console.log(
@@ -64,10 +61,7 @@ const App = () => {
       <Router>
         <One />
       </Router>
-      <h2 id="timerId">{timer}</h2>
-      <button onClick={startTimer}>Start</button>
-      <button onClick={stopTimer}>Stop</button>
-      <button onClick={resetTimer}>Reset</button>
+      <Timer />
     </>
   );
 };

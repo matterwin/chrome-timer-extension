@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 
 const useBackgroundTimer = () => {
   const [timer, setTimer] = useState('00:00.00');
-  const portRef = useRef(null); // Use a ref to keep the port across re-renders
+  const [currentlyRunning, setCurrentlyRunning] = useState(false);
+  const portRef = useRef(null);
 
   useEffect(() => {
     const port = chrome.runtime.connect();
@@ -12,6 +13,9 @@ const useBackgroundTimer = () => {
       console.log(msg);
       if (msg.time) {
         setTimer(msg.time);
+      }
+      if (msg.currentlyRunning) {
+        setCurrentlyRunning(msg.currentlyRunning);
       }
     });
 
@@ -26,7 +30,7 @@ const useBackgroundTimer = () => {
   const stopTimer = () => portRef.current?.postMessage({ action: 'stopTimer' });
   const resetTimer = () => portRef.current?.postMessage({ action: 'resetTimer' });
 
-  return { timer, startTimer, stopTimer, resetTimer };
+  return { timer, currentlyRunning, setCurrentlyRunning, startTimer, stopTimer, resetTimer };
 };
 
 export default useBackgroundTimer;

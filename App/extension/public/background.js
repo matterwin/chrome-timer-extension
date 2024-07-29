@@ -9,7 +9,12 @@ chrome.runtime.onConnect.addListener((connectedPort) => {
   port = connectedPort;
   port.onMessage.addListener(handleMessage);
   port.onDisconnect.addListener(handleDisconnect);
-  if (port) port.postMessage({ time: timeData.formattedTime });
+  if (port) {
+    port.postMessage({ 
+      time: timeData.formattedTime, 
+      currentlyRunning: timeData.currentlyRunning 
+    });
+  }
 });
 
 function handleMessage(msg) {
@@ -20,6 +25,8 @@ function handleMessage(msg) {
     stopTimer();
   } else if (msg.action === "resetTimer") {
     resetTimer();
+  } else if (msg.action === "getTime") {
+    if (port) port.postMessage({ time: timeData.formattedTime });
   }
 }
 
@@ -34,7 +41,7 @@ let timeData = {
   stopTime: 0,
   totalPausedDuration: 0,
   runningClockInterval: null,
-  formattedTime: '00:00:00',
+  formattedTime: '00 00 00',
   currentlyRunning: false
 };
 
@@ -72,10 +79,11 @@ function stopTimer() {
     timeData.stopTime = Date.now();
     clearInterval(timeData.runningClockInterval);
   }
-  if (port != null) port.postMessage({ time: timeData.formattedTime });
+  if (port) port.postMessage({ time: timeData.formattedTime });
 }
 
 function resetTimer() {
+  console.log("Time reset");
   clearInterval(timeData.runningClockInterval);
   timeData = {
     startTime: 0,
@@ -83,11 +91,26 @@ function resetTimer() {
     stopTime: 0,
     totalPausedDuration: 0,
     runningClockInterval: null,
-    formattedTime: '00:00:00',
+    formattedTime: '00 00 00',
     currentlyRunning: false
   };
-  if (port) port.postMessage({ time: timeData.formattedTime });
+
+  if (port) {
+    port.postMessage({ 
+      time: "00 00 00", 
+      currentlyRunning: timeData.currentlyRunning 
+    });
+  }
 }
+
+function getTime() {
+  return timeData.formattedTime;
+}
+
+function setTime(time) {
+  timeData.formattedTime = time;
+  return getTime();
+};
 
 function padZero(num) {
   return num < 10 ? '0' + num : num;
@@ -97,7 +120,7 @@ function formatTime(seconds) {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   const sec = Math.floor(seconds % 60);
-  return `${padZero(hours)}:${padZero(minutes)}:${padZero(sec)}`;
+  return `${padZero(hours)} ${padZero(minutes)} ${padZero(sec)}`;
 }
 
 
