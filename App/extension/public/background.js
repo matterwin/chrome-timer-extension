@@ -7,6 +7,26 @@ let port = null;
 
 let trackedTabs = new Map();
 
+let pollingIntervalId = null;
+const POLL_INTERVAL = 60000; 
+
+const startPolling = () => {
+  pollingIntervalId = setInterval(() => {
+    if (port) {
+      console.log('pong');
+      port.postMessage({ action: 'ping' }); 
+    }
+  }, POLL_INTERVAL);
+};
+
+const stopPolling = () => {
+  if (pollingIntervalId) {
+    console.log("ping terminated");
+    clearInterval(pollingIntervalId);
+    pollingIntervalId = null;
+  }
+};
+
 function openTab() {
   chrome.tabs.query({}, (tabs) => {
     let tabFound = false;
@@ -27,7 +47,6 @@ function openTab() {
         width: 400,
         height: 400
       }, (window) => {
-        // Track the new tab
         if (window.tabs && window.tabs.length > 0) {
           trackedTabs.set(window.tabs[0].id, urlToCheck);
         }
@@ -72,6 +91,8 @@ chrome.runtime.onConnect.addListener((connectedPort) => {
     });
   }
 
+  startPolling();
+
   port.onMessage.addListener(handleMessage);
   port.onDisconnect.addListener(handleDisconnect);
 });
@@ -91,6 +112,7 @@ function handleMessage(msg) {
 
 function handleDisconnect() {
   console.log('Port disconnected');
+  stopPolling();
   port = null;
 }
 
@@ -116,6 +138,7 @@ function updateDisplayedTime() {
 
 function startTimer() {
   if (!timeData.currentlyRunning) {
+    stopPolling();
     timeData.currentlyRunning = true;
 
     if (timeData.stopTime) {
@@ -137,12 +160,14 @@ function stopTimer() {
     console.log("Stopped time: ", timeData.formattedTime);
     timeData.stopTime = Date.now();
     clearInterval(timeData.runningClockInterval);
+    startPolling();
   }
   if (port) port.postMessage({ time: timeData.formattedTime });
 }
 
 function resetTimer() {
   console.log("Time reset");
+  startPolling();
   clearInterval(timeData.runningClockInterval);
   timeData = {
     startTime: 0,

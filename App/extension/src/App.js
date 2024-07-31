@@ -64,11 +64,6 @@ const App = () => {
 
   return (
     <div>
-      <div>
-        <Router>
-          <One setShowTimer={setShowTimer} />
-        </Router>
-      </div>
       {showTimer && <Timer /> }
     </div>
   );

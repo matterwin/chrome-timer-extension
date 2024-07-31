@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 
 const useBackgroundTimer = () => {
-  const [timer, setTimer] = useState('00:00.00');
+  const [timer, setTimer] = useState('00 00 00');
   const [currentlyRunning, setCurrentlyRunning] = useState(false);
   const portRef = useRef(null);
 

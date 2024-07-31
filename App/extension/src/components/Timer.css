@@ -1,43 +1,30 @@
-.digit-outline-div {
-  padding: 10px;
-  background-color: 'black'
-}
-
-.centerScreenDiv {
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-  justify-content: center;
-}
-
-.centerDiv {
-  display: flex;
-  flex-direction: center;
-  align-items: center;
-  width: 100%;
-  justify-content: center;
-}
-
-.buttons-div {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between; 
-  align-items: center;
-  width: 100%; 
-}
-
-.save-and-reset-button-div {
-  display: flex;
-  flex-direction: row;
-  gap: 10px;
-}
-
 .timerID {
   color: #fffff0;
   color: #FFFFE0;
   /* color: #EEE8AA; */
   /* color: #FFFACD; */
-  font-size: 60px;
+  font-size: 70px;
+}
+
+.centerScreenDiv {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.centerContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.buttonsDiv {
+  display: flex;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.timerId {
+  margin-bottom: 5px;
 }
