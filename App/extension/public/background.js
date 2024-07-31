@@ -45,7 +45,7 @@ function openTab() {
         url: urlToCheck,
         type: 'popup',
         width: 400,
-        height: 400
+        height: 300
       }, (window) => {
         if (window.tabs && window.tabs.length > 0) {
           trackedTabs.set(window.tabs[0].id, urlToCheck);
@@ -91,7 +91,7 @@ chrome.runtime.onConnect.addListener((connectedPort) => {
     });
   }
 
-  startPolling();
+  if (!pollingIntervalId) startPolling();
 
   port.onMessage.addListener(handleMessage);
   port.onDisconnect.addListener(handleDisconnect);
@@ -112,7 +112,7 @@ function handleMessage(msg) {
 
 function handleDisconnect() {
   console.log('Port disconnected');
-  stopPolling();
+  if (pollingIntervalId) stopPolling();
   port = null;
 }
 
@@ -126,19 +126,30 @@ let timeData = {
   currentlyRunning: false
 };
 
+function padZero(num) {
+  return num < 10 ? '0' + num : num;
+}
+
+function formatTime(seconds) {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const sec = Math.floor(seconds % 60);
+  return `${padZero(hours)} ${padZero(minutes)} ${padZero(sec)}`;
+}
+
 function updateDisplayedTime() {
   console.log("Current time: ", timeData.formattedTime);
   const currentTime = Date.now();
   timeData.currTime = currentTime;
 
-  const elapsed = (timeData.currTime - timeData.startTime) - timeData.totalPausedDuration;
+  const elapsed = timeData.currTime - timeData.startTime - timeData.totalPausedDuration;
   timeData.formattedTime = formatTime(elapsed / 1000);
   if (port) port.postMessage({ time: timeData.formattedTime });
 }
 
 function startTimer() {
   if (!timeData.currentlyRunning) {
-    stopPolling();
+    if (pollingIntervalId) stopPolling();
     timeData.currentlyRunning = true;
 
     if (timeData.stopTime) {
@@ -148,6 +159,7 @@ function startTimer() {
       timeData.startTime = Date.now();
     }
 
+    updateDisplayedTime();
     timeData.runningClockInterval = setInterval(() => {
       updateDisplayedTime();
     }, 1000);  
@@ -160,14 +172,14 @@ function stopTimer() {
     console.log("Stopped time: ", timeData.formattedTime);
     timeData.stopTime = Date.now();
     clearInterval(timeData.runningClockInterval);
-    startPolling();
+    if (!pollingIntervalId) startPolling();
   }
   if (port) port.postMessage({ time: timeData.formattedTime });
 }
 
 function resetTimer() {
   console.log("Time reset");
-  startPolling();
+  if (!pollingIntervalId) startPolling();
   clearInterval(timeData.runningClockInterval);
   timeData = {
     startTime: 0,
@@ -199,21 +211,8 @@ function setTime(time) {
 function saveTime() {
   chrome.windows.create({
     url: './filesys.html',
-    type: 'popup', // Can be 'normal', 'popup', 'panel', 'app', or 'devtools'
+    type: 'popup', 
     width: 400,
     height: 400
   });
 }
-
-function padZero(num) {
-  return num < 10 ? '0' + num : num;
-}
-
-function formatTime(seconds) {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const sec = Math.floor(seconds % 60);
-  return `${padZero(hours)} ${padZero(minutes)} ${padZero(sec)}`;
-}
-
-

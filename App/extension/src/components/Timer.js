@@ -47,7 +47,7 @@ const Timer = () => {
 return (
     <div className="centerScreenDiv">
       <div className="centerContent">
-        <h2 className="timerId">{timer}</h2>
+        <h2 className="timerId" style={{ opacity: currentlyRunning ? 1 : 0.7 }}>{timer}</h2>
         <div className="buttonsDiv">
           <Fab 
             sx={{ 
@@ -61,7 +61,7 @@ return (
               },
               margin: '0 10px'
             }} 
-            aria-label="add" 
+            aria-label={currentlyRunning ? 'Stop' : 'Start'} 
             onClick={handleStart}
           >
             {currentlyRunning ? 
@@ -79,7 +79,7 @@ return (
               },
               margin: '0 10px'
             }} 
-            aria-label="add" 
+            aria-label='Reset' 
             onClick={handleReset}
           >
             <RestartAltRoundedIcon sx={{ fontSize: '35px' }}/>
@@ -94,7 +94,7 @@ return (
               },
               margin: '0 10px'
             }} 
-            aria-label="add" 
+            aria-label="Folders" 
             onClick={handleReset}
           >
             <FolderRoundedIcon sx={{ fontSize: '35px' }}/>
@@ -109,7 +109,7 @@ return (
               },
               margin: '0 10px'
             }} 
-            aria-label="add" 
+            aria-label="Save" 
             onClick={handleReset}
           >
             <DownloadRoundedIcon sx={{ fontSize: '35px' }}/>
