@@ -1,7 +1,16 @@
 import React, { useState } from 'react';
 import './auth.css';
+import {
+  goBack,
+  goTo,
+  popToTop,
+  Link,
+  Router,
+  getCurrent,
+  getComponentStack,
+} from 'react-chrome-extension-router';
 
-const Login = () => {
+const Login = ({ setShowTimer }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -10,6 +19,11 @@ const Login = () => {
 
     console.log('Username:', email);
     console.log('Password:', password);
+  };
+
+  const handleBack = () => {
+    setShowTimer(true);
+    goBack();
   };
 
   return (
@@ -37,6 +51,7 @@ const Login = () => {
           />
         </div>
         <button type="submit">Login</button>
+        <button onClick={handleBack}>Go back</button>
       </form>
     </div>
   );

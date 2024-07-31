@@ -1,6 +1,12 @@
 import React from 'react';
 import './Timer.css';
 import useBackgroundTimer from '../hooks/useBackgroundTimer';
+import Box from '@mui/material/Box';
+import Fab from '@mui/material/Fab';
+import Divider from '@mui/material/Divider';
+import PlayArrowRoundedIcon from '@mui/icons-material/PlayArrowRounded';
+import PauseTwoToneIcon from '@mui/icons-material/PauseTwoTone';
+import RestartAltRoundedIcon from '@mui/icons-material/RestartAltRounded';
 
 const Timer = () => {
   const { 
@@ -14,8 +20,12 @@ const Timer = () => {
   } = useBackgroundTimer();
 
   const handleStart = () => {
-    startTimer();
-    setCurrentlyRunning(true);
+    if (currentlyRunning) {
+      handleStop();
+    } else {
+      startTimer();
+      setCurrentlyRunning(true);
+    }
   };
 
   const handleStop = () => {
@@ -33,12 +43,52 @@ const Timer = () => {
   };
 
   return (
-    <div>
-      <h2 id="timerId">{timer}</h2>
-      {!currentlyRunning && <button onClick={handleStart}>Start</button>}
-      {currentlyRunning && <button onClick={handleStop}>Stop</button>}
-      <button onClick={handleReset}>Reset</button> 
-      <button onClick={handleSave}>Save</button>
+    <div className="centerScreenDiv">
+      <div style={{ width: '50vw' }}>
+        <div className="centerDiv">
+          <h2 className="timerId">{timer}</h2>
+        </div>
+        <div className="buttons-div"> 
+          <div className="save-and-reset-button-div">
+            <Fab 
+              sx={{ 
+                bgcolor: currentlyRunning ? 'red' : 'green', 
+                border: '1px solid',
+                borderColor: currentlyRunning ? 'blue' : '',
+                color: 'white',
+                borderRadius: '100%',
+                '&:hover': {
+                  bgcolor: currentlyRunning ? 'darkred' : 'darkgreen',
+                },
+              }} 
+              aria-label="add" 
+              onClick={handleStart}
+            >
+              {currentlyRunning ? 
+                <PauseTwoToneIcon sx={{ fontSize: '35px' }}/> 
+                : <PlayArrowRoundedIcon sx={{ fontSize: '35px' }}/>
+              }
+            </Fab>
+            <Fab 
+              sx={{ 
+                bgcolor: '#EEE8AA', 
+                color: 'grey',
+                borderRadius: '100%',
+                '&:hover': {
+                  bgcolor: '#EEE800',
+                },
+              }} 
+              aria-label="add" 
+              onClick={handleReset}
+            >
+              <RestartAltRoundedIcon sx={{ fontSize: '35px' }}/>
+            </Fab>
+          </div>
+          <Fab variant="extended">
+            Save
+          </Fab>
+        </div>
+      </div>
     </div>
   );
 };

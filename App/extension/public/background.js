@@ -2,28 +2,78 @@ console.log("-=-=-=-=-=-=-=-=-=-=-");
 console.log("Welcome to Hour Count");
 console.log("-=-=-=-=-=-=-=-=-=-=-");
 
-chrome.action.onClicked.addListener(() => {
-  console.log('Extension icon clicked');
-  chrome.windows.create({
-    url: chrome.runtime.getURL('index.html'),
-    type: 'popup',
-    width: 400,
-    height: 400
+const urlToCheck = chrome.runtime.getURL('index.html');
+let port = null;
+
+let trackedTabs = new Map();
+
+function openTab() {
+  chrome.tabs.query({}, (tabs) => {
+    let tabFound = false;
+    
+    for (let tab of tabs) {
+      if (tab.url === urlToCheck) {
+        chrome.tabs.update(tab.id, { active: true });
+        chrome.windows.update(tab.windowId, { focused: true });
+        tabFound = true;
+        break;
+      }
+    }
+    
+    if (!tabFound) {
+      chrome.windows.create({
+        url: urlToCheck,
+        type: 'popup',
+        width: 400,
+        height: 400
+      }, (window) => {
+        // Track the new tab
+        if (window.tabs && window.tabs.length > 0) {
+          trackedTabs.set(window.tabs[0].id, urlToCheck);
+        }
+      });
+    }
   });
+}
+
+// Opened extension
+chrome.action.onClicked.addListener(() => {
+  openTab();
 });
 
-let port = null;
+// Track extension id
+chrome.tabs.onCreated.addListener((tab) => {
+  if (tab.url === urlToCheck) {
+    trackedTabs.set(tab.id, tab.url);
+  }
+});
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (tab.url === urlToCheck) {
+    trackedTabs.set(tabId, tab.url);
+  }
+});
+
+chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
+  if (trackedTabs.has(tabId) && trackedTabs.get(tabId) === urlToCheck) {
+    resetTimer();
+    trackedTabs.delete(tabId);
+  }
+});
+
+// Connected to port
 chrome.runtime.onConnect.addListener((connectedPort) => {
   console.log("Port connected");
   port = connectedPort;
-  port.onMessage.addListener(handleMessage);
-  port.onDisconnect.addListener(handleDisconnect);
   if (port) {
     port.postMessage({ 
       time: timeData.formattedTime, 
       currentlyRunning: timeData.currentlyRunning 
     });
   }
+
+  port.onMessage.addListener(handleMessage);
+  port.onDisconnect.addListener(handleDisconnect);
 });
 
 function handleMessage(msg) {

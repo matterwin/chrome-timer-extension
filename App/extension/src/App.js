@@ -10,6 +10,7 @@ import {
   getCurrent,
   getComponentStack,
 } from 'react-chrome-extension-router';
+import './App.css';
 
 import Login from './pages/auth/Login.js';
 import Timer from './components/Timer.js';
@@ -34,17 +35,22 @@ const Two = ({ message }: any) => (
   </div>
 );
 
-const One = () => {
+const One = ({ setShowTimer }) => {
+  const handleClick = () => {
+    setShowTimer(false);
+    goTo(Login, { setShowTimer });
+  };
+
   return (
     <div>
-    <Link component={Login} props={{ message: 'I came from component one!' }}>
-      Login
-    </Link>
+      <button onClick={handleClick}>Login</button>
     </div>
   );
 };
 
 const App = () => {
+  const [showTimer, setShowTimer] = useState(true);
+ 
   useEffect(() => {
     const { component, props } = getCurrent();
     console.log(
@@ -57,12 +63,14 @@ const App = () => {
   }, []);
 
   return (
-    <>
-      <Router>
-        <One />
-      </Router>
-      <Timer />
-    </>
+    <div>
+      <div>
+        <Router>
+          <One setShowTimer={setShowTimer} />
+        </Router>
+      </div>
+      {showTimer && <Timer /> }
+    </div>
   );
 };
 
