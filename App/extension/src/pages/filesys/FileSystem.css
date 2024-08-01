@@ -1,0 +1,17 @@
+.headerDiv {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #90959e;
+  padding: 5;
+  top: 0;
+}
+
+.timerInFileSystem {
+  color: #fffff0;
+  color: #FFFFE0;
+  /* color: #EEE8AA; */
+  /* color: #FFFACD; */
+  font-size: 15px;
+  font-weight: 600;
+}

@@ -4,13 +4,14 @@
   /* color: #EEE8AA; */
   /* color: #FFFACD; */
   font-size: 70px;
+  font-weight: 700;
 }
 
 .centerScreenDiv {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  height: 90vh;
 }
 
 .centerContent {

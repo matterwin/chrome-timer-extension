@@ -1,6 +1,5 @@
 import React from 'react';
-import './Timer.css';
-import useBackgroundTimer from '../hooks/useBackgroundTimer';
+import { goTo } from 'react-chrome-extension-router';
 import Box from '@mui/material/Box';
 import Fab from '@mui/material/Fab';
 import Divider from '@mui/material/Divider';
@@ -8,7 +7,12 @@ import PlayArrowRoundedIcon from '@mui/icons-material/PlayArrowRounded';
 import PauseTwoToneIcon from '@mui/icons-material/PauseTwoTone';
 import RestartAltRoundedIcon from '@mui/icons-material/RestartAltRounded';
 import FolderRoundedIcon from '@mui/icons-material/FolderRounded';
-import DownloadRoundedIcon from '@mui/icons-material/DownloadRounded';
+import FileDownloadRoundedIcon from '@mui/icons-material/FileDownloadRounded';
+import FileDownloadOffRoundedIcon from '@mui/icons-material/FileDownloadOffRounded';
+
+import './Timer.css';
+import useBackgroundTimer from '../hooks/useBackgroundTimer.js';
+import FileSystem from '../pages/filesys/FileSystem.js';
 
 const Timer = () => {
   const { 
@@ -36,12 +40,18 @@ const Timer = () => {
   };
 
   const handleReset = () => {
-    resetTimer();
-    setCurrentlyRunning(false);
+    if (timer !== '00 00 00') {
+      resetTimer();
+      setCurrentlyRunning(false);
+    }
   };
 
   const handleSave = () => {
     saveTimer();
+  };
+
+  const handleFolders = () => {
+    goTo(FileSystem);
   };
 
 return (
@@ -54,7 +64,7 @@ return (
               bgcolor: currentlyRunning ? 'red' : 'green', 
               border: '1px solid',
               borderColor: currentlyRunning ? 'orange' : 'limegreen',
-              color: 'white',
+              color: '#ffffff',
               borderRadius: '100%',
               '&:hover': {
                 bgcolor: currentlyRunning ? 'darkred' : 'darkgreen',
@@ -66,13 +76,13 @@ return (
           >
             {currentlyRunning ? 
               <PauseTwoToneIcon sx={{ fontSize: '35px' }}/> 
-              : <PlayArrowRoundedIcon sx={{ fontSize: '35px' }}/>
+              : <PlayArrowRoundedIcon sx={{ fontSize: '40px' }}/>
             }
           </Fab>
           <Fab 
             sx={{ 
-              bgcolor: 'transparent', 
-              color: 'grey',
+              bgcolor: timer !== '00 00 00' ? '#EEE8AA' : 'grey', 
+              color: timer !== '00 00 00' ? 'grey' : '#2a3439',
               borderRadius: '100%',
               '&:hover': {
                 bgcolor: '#EEE800',
@@ -86,8 +96,8 @@ return (
           </Fab>
           <Fab 
             sx={{ 
-              bgcolor: 'transparent', 
-              color: 'grey',
+              bgcolor: 'grey', 
+              color: '#2a3439',
               borderRadius: '100%',
               '&:hover': {
                 bgcolor: '#EEE800',
@@ -95,14 +105,14 @@ return (
               margin: '0 10px'
             }} 
             aria-label="Folders" 
-            onClick={handleReset}
+            onClick={handleFolders}
           >
             <FolderRoundedIcon sx={{ fontSize: '35px' }}/>
           </Fab>
           <Fab 
             sx={{ 
-              bgcolor: '#EEE8AA', 
-              color: 'grey',
+              bgcolor: timer !== '00 00 00' ? '#EEE8AA' : 'grey', 
+              color: timer !== '00 00 00' ? 'grey' : '#2a3439',
               borderRadius: '100%',
               '&:hover': {
                 bgcolor: '#EEE800',
@@ -112,7 +122,10 @@ return (
             aria-label="Save" 
             onClick={handleReset}
           >
-            <DownloadRoundedIcon sx={{ fontSize: '35px' }}/>
+            {timer === '00 00 00' ? 
+              <FileDownloadOffRoundedIcon sx={{ fontSize: '35px' }}/>
+            : <FileDownloadRoundedIcon sx={{ fontSize: '35px' }}/>
+            }
           </Fab>
         </div>
       </div>

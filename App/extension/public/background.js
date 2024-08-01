@@ -8,7 +8,7 @@ let port = null;
 let trackedTabs = new Map();
 
 let pollingIntervalId = null;
-const POLL_INTERVAL = 60000; 
+const POLL_INTERVAL = 15000; // 15000 needed to keep service worker active
 
 const startPolling = () => {
   pollingIntervalId = setInterval(() => {
