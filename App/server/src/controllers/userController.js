@@ -3,17 +3,19 @@ const timerService = require('../services/timerService.js');
 
 exports.registerUser = async (req, res) => {
   try {
-    const { uuid } = req.body;
-    if (!uuid) {
+    const { email, password } = req.body;
+    if (!email || !password) {
       res.status(400).json({message: 'Missing credentials'});
       return;
     }
 
-    const rootFolderCreation = await timerService.createRootFolder(uuid);
-    if (!rootFolderCreation) {
-      res.status(400).json({ message: 'Error creating root folder' }); 
+    const result = await userService.registerUser(email, password);
+
+    if (result.status === 201) {
+      res.status(201).json(result); 
+    } else {
+      res.status(result.status).json({ message: result.message });
     }
-    res.status(201).json({ message: 'Success. Created root folder for user' });
   } catch (error) {
     res.status(500).json({ message: error.message }); 
   }

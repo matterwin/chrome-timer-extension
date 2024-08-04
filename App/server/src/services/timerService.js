@@ -109,7 +109,27 @@ exports.createFolder = async (folder_name, owner_id, parent_folder_id) => {
       return { status: 400, message: 'Parent folder does not exist' };
     }
 
-    // Check if same named folder exists in curr directory
+    const findOwnerIdForParentFolder = `
+      SELECT owner_id 
+      FROM times.time_folders 
+      WHERE id = $1;
+    `;
+
+    const ownerResult = await client.query(findOwnerIdForParentFolder, [parent_folder_id]);
+
+    if (ownerResult.rowCount === 0) {
+      await client.query('ROLLBACK');
+      return { status: 400, message: 'Parent folder does not have an owner' };
+    }
+
+    const ownerIdForParentFolder = ownerResult.rows[0].owner_id;
+
+    if (owner_id !== ownerIdForParentFolder) {
+      await client.query('ROLLBACK');
+      return { status: 401, message: 'Unauthorized: you are not the owner of the directory.' };
+    }
+
+    // Check if folder with the same name exists in the current directory
     const findCurrentLevelFolderWithSameName = `
       SELECT 1 FROM times.time_folders 
       WHERE parent_folder_id = $1
@@ -122,6 +142,7 @@ exports.createFolder = async (folder_name, owner_id, parent_folder_id) => {
       return { status: 400, message: `Cannot create folder ${folder_name}: Folder exists` };
     }
 
+    // Final insertion
     const insertFolderQuery = `
       INSERT INTO times.time_folders (folder_name, owner_id, parent_folder_id)
       VALUES ($1, $2, $3) RETURNING id
