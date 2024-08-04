@@ -11,14 +11,14 @@ import {
 import Fab from '@mui/material/Fab';
 import ForwardRoundedIcon from '@mui/icons-material/ForwardRounded';
 
-import useBackgroundTimer from '../../hooks/useBackgroundTimer.js';
+import useBackground from '../../hooks/useBackground.js';
 import './FileSystem.css';
 
 const Header = ({ path, setPath }) => {
   const { 
     timer,
     currentlyRunning
-  } = useBackgroundTimer();
+  } = useBackground();
 
   const handleBackward = () => {
     goBack();
@@ -70,7 +70,7 @@ const Header = ({ path, setPath }) => {
   );
 };
 
-const FileSystem = ({ timer }) => {
+const FileSystem = () => {
   const [path, setPath] = useState('root');
 
   return (

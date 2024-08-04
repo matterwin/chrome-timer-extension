@@ -2,6 +2,14 @@ console.log("-=-=-=-=-=-=-=-=-=-=-");
 console.log("Welcome to Hour Count");
 console.log("-=-=-=-=-=-=-=-=-=-=-");
 
+import { FIREBASE_APP, FIREBASE_AUTH,  } from './firebaseConfig.js';
+import { 
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+} from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js';
+
 const urlToCheck = chrome.runtime.getURL('index.html');
 let port = null;
 
@@ -98,7 +106,6 @@ chrome.runtime.onConnect.addListener((connectedPort) => {
 });
 
 function handleMessage(msg) {
-  console.log(msg);
   if (msg.action === "startTimer") {
     startTimer();
   } else if (msg.action === "stopTimer") {
@@ -107,7 +114,69 @@ function handleMessage(msg) {
     resetTimer();
   } else if (msg.action === "getTime") {
     if (port) port.postMessage({ time: timeData.formattedTime });
-  } else if (msg.action === "saveTime") {}
+  } else if (msg.action === "saveTime") {
+    // in progress
+  } else if (msg.action === "registerUser") {
+    registerUser(msg.email, msg.password);
+  } else if (msg.action === "signInUser") {
+    signInUser(msg.email, msg.password);
+  } else if (msg.action === "getUser") {
+    handleGetUser();
+  } else if (msg.action === "signOutUser") {
+    signOutUser(port);
+  }
+}
+
+function handleGetUser() {
+  console.log("attempting to get user");
+  onAuthStateChanged(FIREBASE_AUTH, (user) => {
+    if (port && user) {
+      console.log("user is signed in", user.accessToken);
+      port.postMessage({ action: 'setUser', accessToken: user.accessToken });
+    }
+    else { 
+      console.log("user is not signed in");
+    }
+  });
+};
+
+function registerUser(email, password) {
+  createUserWithEmailAndPassword(FIREBASE_AUTH, email, password)
+  .then((userInfo) => {
+    console.log("Registered User");
+    if (port) {
+      port.postMessage({ action: 'setUser', user: userInfo.user });
+    }
+  })
+  .catch((error) => {
+    console.log(error);
+  });
+}
+
+function signInUser(email, password, port) {
+  signInWithEmailAndPassword(FIREBASE_AUTH, email, password)
+  .then((userInfo) => {
+    console.log("User signed in");
+    console.log(userInfo.user);
+    if (port) {
+      port.postMessage({ action: 'setUser', user: userInfo.user });
+    }
+  })
+  .catch((error) => {
+    console.log(error);
+  });
+}
+
+function signOutUser(port) {
+  console.log("attempting to sign out user");
+  signOut(FIREBASE_AUTH).then(() => {
+    console.log('User signed out');
+    if (port) {
+      port.postMessage({ action: 'signOut' });
+    }
+  }).catch((error) => {
+    console.error('Error signing out:', error.message);
+  });
 }
 
 function handleDisconnect() {

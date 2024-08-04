@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 
-const useBackgroundTimer = () => {
+const useBackground = () => {
   const [timer, setTimer] = useState('00 00 00');
   const [currentlyRunning, setCurrentlyRunning] = useState(false);
   const portRef = useRef(null);
@@ -31,8 +31,17 @@ const useBackgroundTimer = () => {
   const resetTimer = () => portRef.current?.postMessage({ action: 'resetTimer' });
   const saveTimer = () => portRef.current?.postMessage({ action: 'saveTime' });
 
-  return { timer, currentlyRunning, setCurrentlyRunning, startTimer, stopTimer, resetTimer, saveTimer };
+  return { 
+    timer, 
+    currentlyRunning, 
+    setCurrentlyRunning, 
+    startTimer, 
+    stopTimer, 
+    resetTimer, 
+    saveTimer
+  };
 };
 
-export default useBackgroundTimer;
+export default useBackground;
+
 
