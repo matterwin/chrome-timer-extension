@@ -10,6 +10,9 @@ import FolderRoundedIcon from '@mui/icons-material/FolderRounded';
 import FileDownloadRoundedIcon from '@mui/icons-material/FileDownloadRounded';
 import FileDownloadOffRoundedIcon from '@mui/icons-material/FileDownloadOffRounded';
 import LoginRoundedIcon from '@mui/icons-material/LoginRounded';
+import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
+import Tooltip from '@mui/material/Tooltip';
+import CToolTip from './CToolTip.js';
 
 import './Timer.css';
 import useTimer from '../hooks/useTimer.js';
@@ -54,7 +57,8 @@ const Timer = ({ isAuthenticated }) => {
   };
 
   const handleSave = () => {
-    saveTimer();
+    handleStop(); 
+    // saveTimer();
   };
 
   const handleFolders = () => {
@@ -105,108 +109,86 @@ const Timer = ({ isAuthenticated }) => {
           >
             <RestartAltRoundedIcon sx={{ fontSize: '35px' }}/>
           </Fab>
-          {isAuthenticated ?  
-            (<>
-              <Fab 
-                sx={{ 
-                  bgcolor: 'grey', 
-                  color: '#2a3439',
-                  borderRadius: '100%',
-                  '&:hover': {
-                    bgcolor: '#EEE800',
-                  },
-                  margin: '0 10px'
-                }} 
-                aria-label="Folders" 
-                onClick={handleFolders}
-              >
-                <FolderRoundedIcon sx={{ fontSize: '35px' }}/>
-              </Fab>
-              <Fab 
-                sx={{ 
-                  bgcolor: timer !== '00 00 00' ? '#EEE8AA' : 'grey', 
-                  color: timer !== '00 00 00' ? 'grey' : '#2a3439',
-                  borderRadius: '100%',
-                  '&:hover': {
-                    bgcolor: '#EEE800',
-                  },
-                  margin: '0 10px'
-                }} 
-                aria-label="Save" 
-                onClick={handleReset}
-              >
-                {timer === '00 00 00' ? 
-                  <FileDownloadOffRoundedIcon sx={{ fontSize: '35px' }}/>
-                : <FileDownloadRoundedIcon sx={{ fontSize: '35px' }}/>
-                }
-              </Fab>
-              <Fab 
-                variant="extended"
-                sx={{ 
-                  bgcolor: timer !== '00 00 00' ? '#EEE8AA' : 'grey', 
-                  color: timer !== '00 00 00' ? 'grey' : '#2a3439',
-                  borderRadius: '100%',
-                  '&:hover': {
-                    bgcolor: '#EEE800',
-                  },
-                  margin: '0 10px'
-                }} 
-                aria-label="Save" 
-                onClick={() => signOutUser()}
-              >
-                signout
-              </Fab>
-            </>) :
-            (
-              <Fab 
-                sx={{ 
-                  bgcolor: 'grey', 
-                  color: '#2a3439',
-                  borderRadius: '100%',
-                  '&:hover': {
-                    bgcolor: '#EEE800',
-                  },
-                  margin: '0 10px',
-                  textTransform: 'none'
-                }} 
-                aria-label="Login" 
-                onClick={handleAuth}
-              >
-                <svg
-                  viewBox="-10 -50 500 500"
-                  style={{ 
-                    position: 'absolute', 
-                    top: '50%', 
-                    left: '50%', 
-                    transform: 'translate(-50%, -50%)', 
-                    width: '100%', 
-                    height: '100%',
-                    pointerEvents: 'none'
-                  }}
+          {isAuthenticated &&
+            <>
+              <CToolTip title="File System" color="#f8f8f8" textColor="black" placement="top">
+                <Fab 
+                  sx={{ 
+                    bgcolor: 'grey', 
+                    color: '#2a3439',
+                    borderRadius: '100%',
+                    '&:hover': {
+                      bgcolor: '#EEE800',
+                    },
+                    margin: '0 10px'
+                  }} 
+                  aria-label="Folders" 
+                  onClick={handleFolders}
                 >
-                  <path 
-                    id="curve" 
-                    fill="transparent"
-                    d="M73.2,148.6c4-6.1,65.5-96.8,178.6-95.6c111.3,1.2,170.8,90.3,175.1,97" 
-                  />
-                  <text 
-                    width="500" 
-                    className="curvedText"
-                    fill="#2a3439"
-                  >
-                    <textPath 
-                      alignmentBaseline="top" 
-                      xlinkHref="#curve"
-                    >
-                      Login
-                    </textPath>
-                  </text>
-                </svg>
-                <LoginRoundedIcon sx={{ fontSize: '35px' }}/>              
-              </Fab>
-            )
+                  <FolderRoundedIcon sx={{ fontSize: '35px' }}/>
+                </Fab>
+              </CToolTip>
+              <CToolTip title="Save time" color="#f8f8f8" textColor="black" placement="top">
+                <Fab 
+                  sx={{ 
+                    bgcolor: timer !== '00 00 00' ? '#EEE8AA' : 'grey', 
+                    color: timer !== '00 00 00' ? 'grey' : '#2a3439',
+                    borderRadius: '100%',
+                    '&:hover': {
+                      bgcolor: '#EEE800',
+                    },
+                    margin: '0 10px'
+                  }} 
+                  aria-label="Save" 
+                  onClick={handleSave}
+                >
+                  {timer === '00 00 00' ? 
+                    <FileDownloadOffRoundedIcon sx={{ fontSize: '35px' }}/>
+                  : <FileDownloadRoundedIcon sx={{ fontSize: '35px' }}/>
+                  }
+                </Fab>
+              </CToolTip>
+            </>
+          }
+          {!isAuthenticated && 
+            <Fab 
+              sx={{ 
+                bgcolor: 'grey', 
+                color: '#2a3439',
+                borderRadius: '100%',
+                '&:hover': {
+                  bgcolor: '#EEE800',
+                  color: 'grey'
+                },
+                margin: '0 10px',
+                textTransform: 'none'
+              }} 
+              aria-label="Login" 
+              onClick={handleAuth}
+            >
+              Login              
+            </Fab>
           }
         </div>
+        {isAuthenticated && 
+          <CToolTip title="Sign out" color="#f8f8f8" textColor="black" placement="bottom">
+            <Fab 
+              sx={{ 
+                bgcolor: 'transparent', 
+                color: 'grey',
+                borderRadius: '100%',
+                '&:hover': {
+                  bgcolor: '#EEE800',
+                },
+                margin: '0 10px'
+              }} 
+              aria-label="Sign out" 
+              onClick={() => signOutUser()}
+            >
+              <LogoutOutlinedIcon sx={{ fontSize: '35px' }}/>
+            </Fab>
+          </CToolTip>
+        }
       </div>
     </div>
   );

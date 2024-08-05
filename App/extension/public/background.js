@@ -86,7 +86,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 chrome.windows.onFocusChanged.addListener((windowId) => {
   if (windowId === chrome.windows.WINDOW_ID_NONE) {
     console.log("No window is focused.");
-    if (!pollingIntervalId) startPolling();
+    // if (!pollingIntervalId) startPolling();
   } else {
     chrome.windows.get(windowId, { populate: true }, (window) => {
       let isTrackedTabInFocus = false;
@@ -97,9 +97,9 @@ chrome.windows.onFocusChanged.addListener((windowId) => {
         }
       });
       if (isTrackedTabInFocus) {
-        if (pollingIntervalId) stopPolling();
+        // if (pollingIntervalId) stopPolling();
       } else {
-        if (!pollingIntervalId) startPolling();
+        // if (!pollingIntervalId) startPolling();
       }
     });
   }
@@ -109,7 +109,7 @@ chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
   if (trackedTabs.has(tabId) && trackedTabs.get(tabId) === urlToCheck) {
     resetTimer();
     trackedTabs.delete(tabId);
-    if (pollingIntervalId) stopPolling();
+    // if (pollingIntervalId) stopPolling();
   }
 });
 
@@ -187,7 +187,7 @@ function getUser() {
   onAuthStateChanged(FIREBASE_AUTH, (user) => {
     if (authPort && user) {
       console.log("user is signed in", user.accessToken);
-      authPort.postMessage({ action: 'setUser', accessToken: user.accessToken });
+      authPort.postMessage({ action: 'setUser', status: 200, accessToken: user.accessToken });
     }
     else { 
       console.log("user is not signed in");
@@ -200,7 +200,7 @@ function registerUser(email, password) {
   .then((userInfo) => {
     console.log("Registered User");
     if (authPort) {
-      authPort.postMessage({ action: 'setUser', user: userInfo.user });
+      authPort.postMessage({ action: 'setUser', status: 201, accessToken: userInfo.user.accessToken });
     }
   })
   .catch((error) => {
@@ -214,11 +214,14 @@ function signInUser(email, password, port) {
     console.log("User signed in");
     console.log(userInfo.user);
     if (authPort) {
-      authPort.postMessage({ action: 'setUser', user: userInfo.user });
+      authPort.postMessage({ action: 'signInUserResponse', status: 200, accessToken: userInfo.user.accessToken });
     }
   })
   .catch((error) => {
     console.log(error);
+    if (authPort) {
+      authPort.postMessage({ action: 'signInUserResponse', status: 401, error: error });
+    }
   });
 }
 

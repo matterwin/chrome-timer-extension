@@ -24,13 +24,18 @@ const Login = (isAuthenticated) => {
   const signIn = async () => {
     setLoading(true);
     try {
-      await signInUser(email, password);
+      const res = await signInUser(email, password);
+      if (res.status === 200) {
+        popToTop(); 
+      } else {
+        setLoading(false);
+        alert(res.error);
+      }
     } catch (e) {
       console.log(e);
       alert('Invalid creds');
     } finally {
       setLoading(false);
-      popToTop(); 
     }
   };
 
@@ -55,7 +60,7 @@ const Login = (isAuthenticated) => {
   };
 
   const handleBack = () => {
-    goTo(Timer, { isAuthenticated });
+    goBack();
   };
 
   return (
@@ -85,6 +90,7 @@ const Login = (isAuthenticated) => {
         <button type="submit">{loading ? 'Loading...' : 'Sign In'}</button>
         <button onClick={() => setChoseSignIn(false)} type="submit">Register</button>
         <button onClick={handleBack} type="button">Go back</button>
+        <div><p>Forgot password?</p></div>
       </form>
     </div>
   );

@@ -5,6 +5,7 @@
   /* color: #FFFACD; */
   font-size: 70px;
   font-weight: 700;
+  margin-bottom: 0px;
 }
 
 .centerScreenDiv {
@@ -18,16 +19,12 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 20px;
 }
 
 .buttonsDiv {
   display: flex;
   align-items: center;
-  margin-top: 20px;
-}
-
-.timerId {
-  margin-bottom: 5px;
 }
 
 .curvedText {

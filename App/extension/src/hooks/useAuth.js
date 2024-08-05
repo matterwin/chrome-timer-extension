@@ -12,10 +12,18 @@ const useAuth = () => {
       portRef.current = port;
 
       port.onMessage.addListener((msg) => {
-        if (msg.action === "setUser" && msg.accessToken !== undefined) {
-          dispatch(loginSuccess(msg.accessToken));
-        } 
-        
+        if (msg.action === 'signInUserResponse') {
+          if (msg.status === 200) {
+            dispatch(loginSuccess(msg.accessToken));
+            return { status: msg.status };
+          } else {
+            return { status: msg.status, error: msg.error };
+          }
+        } else if (msg.action === 'setUser') {
+          if (msg.status === 200) {
+            dispatch(loginSuccess(msg.accessToken));
+          }
+        }
       });
 
       return () => {
@@ -41,6 +49,13 @@ const useAuth = () => {
       action: 'signInUser',
       email: email,
       password: password
+    });
+    return new Promise((resolve) => {
+      portRef.current.onMessage.addListener((msg) => {
+        if (msg.action === 'signInUserResponse') {
+          resolve(msg);
+        }
+      });
     });
   };
 
