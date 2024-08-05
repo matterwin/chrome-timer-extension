@@ -12,7 +12,7 @@ import FileDownloadOffRoundedIcon from '@mui/icons-material/FileDownloadOffRound
 import LoginRoundedIcon from '@mui/icons-material/LoginRounded';
 
 import './Timer.css';
-import useBackground from '../hooks/useBackground.js';
+import useTimer from '../hooks/useTimer.js';
 import useAuth from '../hooks/useAuth.js';
 import FileSystem from '../pages/filesys/FileSystem.js';
 import Login from '../pages/auth/Login.js';
@@ -26,7 +26,7 @@ const Timer = ({ isAuthenticated }) => {
     stopTimer, 
     resetTimer,
     saveTimer
-  } = useBackground();
+  } = useTimer();
 
   const {
     signOutUser

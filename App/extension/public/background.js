@@ -11,7 +11,8 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js';
 
 const urlToCheck = chrome.runtime.getURL('index.html');
-let port = null;
+let timerPort = null;
+let authPort = null;
 
 let trackedTabs = new Map();
 
@@ -20,9 +21,9 @@ const POLL_INTERVAL = 15000; // 15000 needed to keep service worker active
 
 const startPolling = () => {
   pollingIntervalId = setInterval(() => {
-    if (port) {
+    if (timerPort) {
       console.log('pong');
-      port.postMessage({ action: 'ping' }); 
+      timerPort.postMessage({ action: 'ping' }); 
     }
   }, POLL_INTERVAL);
 };
@@ -81,31 +82,81 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   }
 });
 
+// polling to update timer in background without inactivation
+chrome.windows.onFocusChanged.addListener((windowId) => {
+  if (windowId === chrome.windows.WINDOW_ID_NONE) {
+    console.log("No window is focused.");
+    if (!pollingIntervalId) startPolling();
+  } else {
+    chrome.windows.get(windowId, { populate: true }, (window) => {
+      let isTrackedTabInFocus = false;
+      window.tabs.forEach((tab) => {
+        if (trackedTabs.has(tab.id)) {
+          isTrackedTabInFocus = true;
+          console.log(`Tab ${tab.id} is in the focused window.`);
+        }
+      });
+      if (isTrackedTabInFocus) {
+        if (pollingIntervalId) stopPolling();
+      } else {
+        if (!pollingIntervalId) startPolling();
+      }
+    });
+  }
+});
+
 chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
   if (trackedTabs.has(tabId) && trackedTabs.get(tabId) === urlToCheck) {
     resetTimer();
     trackedTabs.delete(tabId);
+    if (pollingIntervalId) stopPolling();
   }
 });
 
 // Connected to port
 chrome.runtime.onConnect.addListener((connectedPort) => {
-  console.log("Port connected");
-  port = connectedPort;
-  if (port) {
-    port.postMessage({ 
-      time: timeData.formattedTime, 
-      currentlyRunning: timeData.currentlyRunning 
-    });
+  if (connectedPort.name == "auth") {
+    console.log("authPort connected");
+    authPort = connectedPort;
+
+    // other way besides useeffect in appjs
+    // getUser(); 
+
+    authPort.onMessage.addListener(handleAuthMessage);
+    authPort.onDisconnect.addListener(handleAuthDisconnect);
   }
+  if (connectedPort.name == "timer") {
+    console.log("timerPort connected");
+    timerPort = connectedPort;
 
-  if (!pollingIntervalId) startPolling();
+    if (timerPort) {
+      timerPort.postMessage({ 
+        time: timeData.formattedTime, 
+        currentlyRunning: timeData.currentlyRunning 
+      });
+    }
 
-  port.onMessage.addListener(handleMessage);
-  port.onDisconnect.addListener(handleDisconnect);
+    // need different way to start polling
+    /* if (!pollingIntervalId) startPolling(); */
+
+    timerPort.onMessage.addListener(handleTimerMessage);
+    timerPort.onDisconnect.addListener(handleTimerDisconnect);
+  }
 });
 
-function handleMessage(msg) {
+function handleAuthMessage(msg) {
+  if (msg.action === "registerUser") {
+    registerUser(msg.email, msg.password);
+  } else if (msg.action === "signInUser") {
+    signInUser(msg.email, msg.password);
+  } else if (msg.action === "getUser") {
+    getUser();
+  } else if (msg.action === "signOutUser") {
+    signOutUser();
+  }
+}
+
+function handleTimerMessage(msg) {
   if (msg.action === "startTimer") {
     startTimer();
   } else if (msg.action === "stopTimer") {
@@ -113,26 +164,30 @@ function handleMessage(msg) {
   } else if (msg.action === "resetTimer") {
     resetTimer();
   } else if (msg.action === "getTime") {
-    if (port) port.postMessage({ time: timeData.formattedTime });
+    if (timerPort) timerPort.postMessage({ time: timeData.formattedTime });
   } else if (msg.action === "saveTime") {
     // in progress
-  } else if (msg.action === "registerUser") {
-    registerUser(msg.email, msg.password);
-  } else if (msg.action === "signInUser") {
-    signInUser(msg.email, msg.password);
-  } else if (msg.action === "getUser") {
-    handleGetUser();
-  } else if (msg.action === "signOutUser") {
-    signOutUser(port);
-  }
+  } 
 }
 
-function handleGetUser() {
+// do so for authPort and timerPort
+function handleTimerDisconnect() {
+  console.log('Timer port disconnected');
+  // if (pollingIntervalId) stopPolling();
+  timerPort = null;
+}
+
+function handleAuthDisconnect() {
+  console.log('Auth port disconnected');
+  authPort = null;
+}
+
+function getUser() {
   console.log("attempting to get user");
   onAuthStateChanged(FIREBASE_AUTH, (user) => {
-    if (port && user) {
+    if (authPort && user) {
       console.log("user is signed in", user.accessToken);
-      port.postMessage({ action: 'setUser', accessToken: user.accessToken });
+      authPort.postMessage({ action: 'setUser', accessToken: user.accessToken });
     }
     else { 
       console.log("user is not signed in");
@@ -144,8 +199,8 @@ function registerUser(email, password) {
   createUserWithEmailAndPassword(FIREBASE_AUTH, email, password)
   .then((userInfo) => {
     console.log("Registered User");
-    if (port) {
-      port.postMessage({ action: 'setUser', user: userInfo.user });
+    if (authPort) {
+      authPort.postMessage({ action: 'setUser', user: userInfo.user });
     }
   })
   .catch((error) => {
@@ -158,8 +213,8 @@ function signInUser(email, password, port) {
   .then((userInfo) => {
     console.log("User signed in");
     console.log(userInfo.user);
-    if (port) {
-      port.postMessage({ action: 'setUser', user: userInfo.user });
+    if (authPort) {
+      authPort.postMessage({ action: 'setUser', user: userInfo.user });
     }
   })
   .catch((error) => {
@@ -167,22 +222,16 @@ function signInUser(email, password, port) {
   });
 }
 
-function signOutUser(port) {
+function signOutUser() {
   console.log("attempting to sign out user");
   signOut(FIREBASE_AUTH).then(() => {
     console.log('User signed out');
-    if (port) {
-      port.postMessage({ action: 'signOut' });
+    if (authPort) {
+      authPort.postMessage({ action: 'signOut' });
     }
   }).catch((error) => {
     console.error('Error signing out:', error.message);
   });
-}
-
-function handleDisconnect() {
-  console.log('Port disconnected');
-  if (pollingIntervalId) stopPolling();
-  port = null;
 }
 
 let timeData = {
@@ -213,12 +262,12 @@ function updateDisplayedTime() {
 
   const elapsed = timeData.currTime - timeData.startTime - timeData.totalPausedDuration;
   timeData.formattedTime = formatTime(elapsed / 1000);
-  if (port) port.postMessage({ time: timeData.formattedTime });
+  if (timerPort) timerPort.postMessage({ time: timeData.formattedTime });
 }
 
 function startTimer() {
   if (!timeData.currentlyRunning) {
-    if (pollingIntervalId) stopPolling();
+    // if (pollingIntervalId) stopPolling();
     timeData.currentlyRunning = true;
 
     if (timeData.stopTime) {
@@ -241,14 +290,14 @@ function stopTimer() {
     console.log("Stopped time: ", timeData.formattedTime);
     timeData.stopTime = Date.now();
     clearInterval(timeData.runningClockInterval);
-    if (!pollingIntervalId) startPolling();
+    // if (!pollingIntervalId) startPolling();
   }
-  if (port) port.postMessage({ time: timeData.formattedTime });
+  if (timerPort) timerPort.postMessage({ time: timeData.formattedTime });
 }
 
 function resetTimer() {
   console.log("Time reset");
-  if (!pollingIntervalId) startPolling();
+  // if (!pollingIntervalId) startPolling();
   clearInterval(timeData.runningClockInterval);
   timeData = {
     startTime: 0,
@@ -260,8 +309,8 @@ function resetTimer() {
     currentlyRunning: false
   };
 
-  if (port) {
-    port.postMessage({ 
+  if (timerPort) {
+    timerPort.postMessage({ 
       time: "00 00 00", 
       currentlyRunning: timeData.currentlyRunning 
     });
@@ -278,10 +327,5 @@ function setTime(time) {
 }
 
 function saveTime() {
-  chrome.windows.create({
-    url: './filesys.html',
-    type: 'popup', 
-    width: 400,
-    height: 400
-  });
+  
 }

@@ -11,14 +11,14 @@ import {
 import Fab from '@mui/material/Fab';
 import ForwardRoundedIcon from '@mui/icons-material/ForwardRounded';
 
-import useBackground from '../../hooks/useBackground.js';
+import useTimer from '../../hooks/useTimer.js';
 import './FileSystem.css';
 
 const Header = ({ path, setPath }) => {
   const { 
     timer,
     currentlyRunning
-  } = useBackground();
+  } = useTimer();
 
   const handleBackward = () => {
     goBack();

@@ -8,15 +8,14 @@ const useAuth = () => {
 
   const connectPort = () => {
     if (!portRef.current) {
-      const port = chrome.runtime.connect();
+      const port = chrome.runtime.connect({ name: 'auth' });
       portRef.current = port;
 
       port.onMessage.addListener((msg) => {
         if (msg.action === "setUser" && msg.accessToken !== undefined) {
           dispatch(loginSuccess(msg.accessToken));
-        } else if (msg.action === "signOut") {
-          dispatch(logout());
-        }
+        } 
+        
       });
 
       return () => {
@@ -47,6 +46,7 @@ const useAuth = () => {
 
   const signOutUser = () => {
     connectPort();
+    dispatch(logout());
     portRef.current?.postMessage({ action: 'signOutUser' });
   };
 

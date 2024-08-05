@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 
-const useBackground = () => {
+const useTimer = () => {
   const [timer, setTimer] = useState('00 00 00');
   const [currentlyRunning, setCurrentlyRunning] = useState(false);
   const portRef = useRef(null);
 
   useEffect(() => {
-    const port = chrome.runtime.connect();
+    const port = chrome.runtime.connect({ name: 'timer' });
     portRef.current = port;
 
     port.onMessage.addListener((msg) => {
@@ -42,6 +42,6 @@ const useBackground = () => {
   };
 };
 
-export default useBackground;
+export default useTimer;
 
 
