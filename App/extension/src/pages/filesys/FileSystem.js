@@ -33,11 +33,11 @@ const Header = ({ path, setPath }) => {
       <Fab 
         sx={{ 
           bgcolor: 'transparent', 
-          color: '#2a3439',
+          color: 'grey',
           boxShadow: 'none',
           borderRadius: '100%',
           '&:hover': {
-            bgcolor: 'grey',
+            bgcolor: '#2a3439',
           },
           margin: '0 10px'
         }} 
@@ -46,8 +46,8 @@ const Header = ({ path, setPath }) => {
       >
         <ForwardRoundedIcon sx={{ transform: 'scaleX(-1)', fontSize: '35px' }}/>
       </Fab> 
-      <div style={{ paddingLeft: 5, paddingRight: 5, paddingTop: 2, paddingBottom: 2, backgroundColor: 'lightgrey', borderRadius: '5px' }}>
-        <h3>{path}</h3>
+      <div style={{ paddingLeft: 5, paddingRight: 5, paddingTop: 2, paddingBottom: 2, backgroundColor: '#212121', borderRadius: '5px' }}>
+        <h3 style={{ color: '#FFFFE0' }}>{path}</h3>
       </div>
       <Fab 
         variant="extended"
@@ -74,7 +74,7 @@ const FileSystem = () => {
   const [path, setPath] = useState('root');
 
   return (
-    <div>
+    <div className="container">
       <Header path={path} />
       <h2>File System</h2>
     </div>

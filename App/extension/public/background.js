@@ -214,13 +214,32 @@ function signInUser(email, password, port) {
     console.log("User signed in");
     console.log(userInfo.user);
     if (authPort) {
-      authPort.postMessage({ action: 'signInUserResponse', status: 200, accessToken: userInfo.user.accessToken });
+      authPort.postMessage({ 
+        action: 'signInUserResponse', 
+        status: 200, 
+        accessToken: userInfo.user.accessToken 
+      });
     }
   })
   .catch((error) => {
     console.log(error);
+    let errorMessage;
+    switch (error.code) {
+      case 'auth/invalid-email':
+        errorMessage = 'Invalid email address!';
+        break;
+      case 'auth/invalid-credential':
+        errorMessage = 'Invalid credential!';
+        break;
+      default:
+        errorMessage = 'Error signing in, please wait a few minutes.';
+    }
     if (authPort) {
-      authPort.postMessage({ action: 'signInUserResponse', status: 401, error: error });
+      authPort.postMessage({ 
+        action: 'signInUserResponse', 
+        status: 401, 
+        error: errorMessage 
+      });
     }
   });
 }

@@ -1,8 +1,17 @@
+.container {
+  background-color: #212121;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
 .headerDiv {
   display: flex;
   justify-content: center;
   align-items: center;
   background-color: #90959e;
+  background-color: #212121;
+  background-color: #171717;
   padding: 5;
   top: 0;
 }

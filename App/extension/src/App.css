@@ -6,3 +6,6 @@ html, body {
   background-color: #2a3439;
 }
 
+#toast-container > .toast {
+  margin-top: 20px; 
+}

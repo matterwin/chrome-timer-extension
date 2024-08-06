@@ -9,7 +9,9 @@ import {
   getCurrent,
   getComponentStack,
 } from 'react-chrome-extension-router';
+import { MutatingDots } from 'react-loader-spinner'
 
+import toastr from '../../config/toasterConfig.js';
 import Timer from '../../components/Timer.js';
 import useAuth from '../../hooks/useAuth.js';
 
@@ -26,14 +28,14 @@ const Login = (isAuthenticated) => {
     try {
       const res = await signInUser(email, password);
       if (res.status === 200) {
+        toastr.success('Signed in successfully!');
         popToTop(); 
       } else {
         setLoading(false);
-        alert(res.error);
+        toastr.error(res.error);
       }
     } catch (e) {
-      console.log(e);
-      alert('Invalid creds');
+      setLoading(false);
     } finally {
       setLoading(false);
     }
@@ -65,33 +67,48 @@ const Login = (isAuthenticated) => {
 
   return (
     <div className="login-container">
-      <form onSubmit={handleSubmit} className="login-form">
-        <h2>Login</h2>
-        <div className="form-group">
-          <label htmlFor="email">Email</label>
-          <input
-            type="text"
-            id="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </div>
-        <div className="form-group">
-          <label htmlFor="password">Password</label>
-          <input
-            type="password"
-            id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
-        <button type="submit">{loading ? 'Loading...' : 'Sign In'}</button>
-        <button onClick={() => setChoseSignIn(false)} type="submit">Register</button>
-        <button onClick={handleBack} type="button">Go back</button>
-        <div><p>Forgot password?</p></div>
-      </form>
+      {loading && 
+        <MutatingDots
+        visible={true}
+        height="100"
+        width="100"
+        color="red"
+        secondaryColor="green"
+        radius="12.5"
+        ariaLabel="mutating-dots-loading"
+        wrapperStyle={{}}
+        wrapperClass=""
+        />
+      }
+      {!loading &&
+        <form onSubmit={handleSubmit} className="login-form">
+          <h2>Login</h2>
+          <div className="form-group">
+            <label htmlFor="email">Email</label>
+            <input
+              type="text"
+              id="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="password">Password</label>
+            <input
+              type="password"
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          <button type="submit">Sign In</button>
+          <button onClick={() => setChoseSignIn(false)} type="submit">Register</button>
+          <button onClick={handleBack} type="button">Go back</button>
+          <div><p>Forgot password?</p></div>
+        </form>
+      }
     </div>
   );
 };
