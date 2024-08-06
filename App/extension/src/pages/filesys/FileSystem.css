@@ -1,8 +1,19 @@
 .container {
-  background-color: #212121;
+  background-color: #2a3439;
   height: 100vh;
   display: flex;
-  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.console-container {
+  background-color: #212121;
+  background-color: #3d6273;
+  /* background-color: #EEE8AA; */
+  border-radius: 5px;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.25);
+  width: 700px;
+  margin-top: 100px;
 }
 
 .headerDiv {
@@ -10,8 +21,10 @@
   justify-content: center;
   align-items: center;
   background-color: #90959e;
-  background-color: #212121;
-  background-color: #171717;
+  background-color: #425259;
+  /* background-color: #171717; */
+  border-bottom: 1px solid #3d6273;
+  /* border-bottom: 1px solid #EEE8AA; */
   padding: 5;
   top: 0;
 }

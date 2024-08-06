@@ -75,8 +75,10 @@ const FileSystem = () => {
 
   return (
     <div className="container">
-      <Header path={path} />
-      <h2>File System</h2>
+      <div className="console-container">
+        <Header path={path} />
+        <h2 style={{ padding: '15px', color: '#FFFFE0' }}>File System</h2>
+      </div>
     </div>
   );
 };
