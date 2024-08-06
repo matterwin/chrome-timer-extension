@@ -10,6 +10,8 @@ import {
   getComponentStack,
 } from 'react-chrome-extension-router';
 import { MutatingDots } from 'react-loader-spinner'
+import RedditTextField from '../../components/custom/RedditTextField.js';
+import FormControl from '@mui/material/FormControl';
 
 import toastr from '../../config/toasterConfig.js';
 import Timer from '../../components/Timer.js';
@@ -81,33 +83,36 @@ const Login = (isAuthenticated) => {
         />
       }
       {!loading &&
-        <form onSubmit={handleSubmit} className="login-form">
-          <h2>Login</h2>
-          <div className="form-group">
-            <label htmlFor="email">Email</label>
-            <input
-              type="text"
-              id="email"
+        <div className="center">
+          <form onSubmit={handleSubmit} className="login-form">
+            <h2 style={{ color: 'white' }}>Login</h2>
+            <RedditTextField
+              label="Email"
+              id="reddit-input"
+              variant="filled"
+              style={{ marginTop: 11 }}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
-          </div>
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <input
+            <RedditTextField
+              label="Password"
               type="password"
-              id="password"
+              id="reddit-input"
+              variant="filled"
+              style={{ marginTop: 7, marginBottom: 11 }}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
-          </div>
-          <button type="submit">Sign In</button>
-          <button onClick={() => setChoseSignIn(false)} type="submit">Register</button>
-          <button onClick={handleBack} type="button">Go back</button>
-          <div><p>Forgot password?</p></div>
-        </form>
+            <button type="submit">Sign In</button>
+            <button onClick={() => setChoseSignIn(false)} type="submit">Register</button>
+            <button onClick={handleBack} type="button">Go back</button>
+            <div><p>Forgot password?</p></div>
+            <div><p>Create account</p></div>
+          </form>
+          <div><p>Login with Google</p></div>
+        </div>
       }
     </div>
   );

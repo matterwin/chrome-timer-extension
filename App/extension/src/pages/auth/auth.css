@@ -7,12 +7,18 @@
 }
 
 .login-form {
-  background-color: #212121;
+  background-color: transparent;
   /* background-color: #171717; */
-  padding: 20px;
+  border: 1px solid #212121;
+  padding: 40px;
+  box-sizing: border-box;
   border-radius: 8px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  width: 300px;
+  width: 350px;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  display: flex;
 }
 
 .form-group {
@@ -22,6 +28,17 @@
 .form-group label {
   display: block;
   margin-bottom: 5px;
+}
+
+.center {
+  justify-content: center;
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+}
+
+.MuiFormLabel-asterisk {
+  display: none; /* Hide the asterisk */
 }
 
 .form-group input {
@@ -43,4 +60,16 @@ button {
 button:hover {
   background-color: #0056b3;
 }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  background-color: #2a3439;
+}
+
+
+
+
 
