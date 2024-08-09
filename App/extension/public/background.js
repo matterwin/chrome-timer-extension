@@ -7,12 +7,84 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithPopup
 } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js';
+
+const OFFSCREEN_DOCUMENT_PATH = './offscreen.html';
+let creatingOffscreenDocument;
+let creating = null;
+
+async function hasDocument() {
+  const matchedClients = await clients.matchAll();
+  return matchedClients.some(
+    (c) => c.url === chrome.runtime.getURL(OFFSCREEN_DOCUMENT_PATH)
+  );
+}
+
+async function setupOffscreenDocument(path) {
+  if (!(await hasDocument())) {
+    if (creating) {
+      await creating;
+    } else {
+      creating = chrome.offscreen.createDocument({
+        url: path,
+        reasons: [
+            chrome.offscreen.Reason.DOM_SCRAPING
+        ],
+        justification: 'authentication'
+      });
+      await creating;
+      creating = null;
+    }
+  }
+}
+
+async function closeOffscreenDocument() {
+  if (!(await hasDocument())) {
+    return;
+  }
+  await chrome.offscreen.closeDocument();
+}
+
+function getAuth() {
+  return new Promise(async (resolve, reject) => {
+    const auth = await chrome.runtime.sendMessage({
+      type: 'firebase-auth',
+      target: 'offscreen'
+    });
+    auth?.name !== 'FirebaseError' ? resolve(auth) : reject(auth);
+  })
+}
+
+async function firebaseAuth() {
+  await setupOffscreenDocument(OFFSCREEN_DOCUMENT_PATH);
+
+  const auth = await getAuth()
+    .then((FIREBASE_AUTH) => {
+      console.log('User Authenticated', auth);
+      return auth;
+    })
+    .catch(err => {
+      if (err.code === 'auth/operation-not-allowed') {
+        console.error('You must enable an OAuth provider in the Firebase' +
+                      ' console in order to use signInWithPopup. This sample' +
+                      ' uses Google by default.');
+      } else {
+        console.error(err);
+        return err;
+      }
+    })
+    .finally(closeOffscreenDocument)
+
+  return auth;
+}
 
 const urlToCheck = chrome.runtime.getURL('index.html');
 let timerPort = null;
 let authPort = null;
+let filesysPort = null;
 
 let trackedTabs = new Map();
 
@@ -142,6 +214,19 @@ chrome.runtime.onConnect.addListener((connectedPort) => {
     timerPort.onMessage.addListener(handleTimerMessage);
     timerPort.onDisconnect.addListener(handleTimerDisconnect);
   }
+
+  if (connectedPort.name == "filesys") {
+    console.log("filesysPort connected");
+    filesysPort = connectedPort;
+
+    
+    // maybe on connect, send back entire file system
+    // like maybe do that with auth
+    
+
+    filesysPort.onMessage.addListener(handleFilesysMessage);
+    filesysPort.onDisconnect.addListener(handleFilesysDisconnect);
+  }
 });
 
 function handleAuthMessage(msg) {
@@ -153,7 +238,9 @@ function handleAuthMessage(msg) {
     getUser();
   } else if (msg.action === "signOutUser") {
     signOutUser();
-  }
+  } else if (msg.action === "signInWithGoogle") {
+    firebaseAuth(); 
+  } 
 }
 
 function handleTimerMessage(msg) {
@@ -170,7 +257,15 @@ function handleTimerMessage(msg) {
   } 
 }
 
-// do so for authPort and timerPort
+function handleFilesysMessage(msg) {
+  
+}
+
+function handleFilesysDisconnect() {
+  console.log('Filesys port disconnected');
+  filesysPort = null;
+}
+
 function handleTimerDisconnect() {
   console.log('Timer port disconnected');
   // if (pollingIntervalId) stopPolling();
@@ -186,44 +281,73 @@ function getUser() {
   console.log("attempting to get user");
   onAuthStateChanged(FIREBASE_AUTH, (user) => {
     if (authPort && user) {
-      console.log("user is signed in", user.accessToken);
+      console.log("user is signed in", user);
       authPort.postMessage({ action: 'setUser', status: 200, accessToken: user.accessToken });
     }
     else { 
       console.log("user is not signed in");
     }
   });
-};
-
-function registerUser(email, password) {
-  createUserWithEmailAndPassword(FIREBASE_AUTH, email, password)
-  .then((userInfo) => {
-    console.log("Registered User");
-    if (authPort) {
-      authPort.postMessage({ action: 'setUser', status: 201, accessToken: userInfo.user.accessToken });
-    }
-  })
-  .catch((error) => {
-    console.log(error);
-  });
 }
 
-function signInUser(email, password, port) {
-  signInWithEmailAndPassword(FIREBASE_AUTH, email, password)
-  .then((userInfo) => {
-    console.log("User signed in");
-    console.log(userInfo.user);
+async function registerUser(email, password) {
+  console.log("attempting to register user");
+  try {
+    const userCredential = await createUserWithEmailAndPassword(FIREBASE_AUTH, email, password);
+    console.log("User is now registered");
+
     if (authPort) {
-      authPort.postMessage({ 
-        action: 'signInUserResponse', 
-        status: 200, 
-        accessToken: userInfo.user.accessToken 
+      authPort.postMessage({
+        action: 'registerUserResponse',
+        status: 201,
+        accessToken: userCredential.user.accessToken
       });
     }
-  })
-  .catch((error) => {
+  } catch (error) {
     console.log(error);
     let errorMessage;
+
+    switch (error.code) {
+      case 'auth/invalid-email':
+        errorMessage = 'Invalid email address!';
+        break;
+      case 'auth/email-already-in-use':
+        errorMessage = 'Email alreay in use';
+        break;
+      case 'auth/weak-password':
+        errorMessage = 'Password must be at least 6 characters';
+        break;
+      default:
+        errorMessage = 'Error signing in, please wait a few minutes.';
+    }
+
+    if (authPort) {
+      authPort.postMessage({
+        action: 'registerUserResponse',
+        status: 400,
+        error: errorMessage
+      });
+    }
+  }
+}
+
+
+async function signInUser(email, password) {
+  try {
+    const userCredential = await signInWithEmailAndPassword(FIREBASE_AUTH, email, password);
+    console.log("User signed in");
+
+    if (authPort) {
+      authPort.postMessage({
+        action: 'signInUserResponse',
+        status: 200,
+        accessToken: userCredential.user.accessToken
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    let errorMessage;
+
     switch (error.code) {
       case 'auth/invalid-email':
         errorMessage = 'Invalid email address!';
@@ -234,27 +358,32 @@ function signInUser(email, password, port) {
       default:
         errorMessage = 'Error signing in, please wait a few minutes.';
     }
+
     if (authPort) {
-      authPort.postMessage({ 
-        action: 'signInUserResponse', 
-        status: 401, 
-        error: errorMessage 
+      authPort.postMessage({
+        action: 'signInUserResponse',
+        status: 401,
+        error: errorMessage
       });
     }
-  });
+  }
 }
 
-function signOutUser() {
-  console.log("attempting to sign out user");
-  signOut(FIREBASE_AUTH).then(() => {
+
+async function signOutUser() {
+  console.log("Attempting to sign out user");
+  try {
+    await signOut(FIREBASE_AUTH);
     console.log('User signed out');
+
     if (authPort) {
       authPort.postMessage({ action: 'signOut' });
     }
-  }).catch((error) => {
+  } catch (error) {
     console.error('Error signing out:', error.message);
-  });
+  }
 }
+
 
 let timeData = {
   startTime: 0,

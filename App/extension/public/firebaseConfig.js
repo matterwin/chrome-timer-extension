@@ -1,5 +1,5 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js'
-import { getAuth } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js'
+import { getAuth, signInWithPopup, GoogleAuthProvider } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js'
 
 const firebaseConfig = {
   apiKey: "",
@@ -12,3 +12,13 @@ const firebaseConfig = {
 
 export const FIREBASE_APP = initializeApp(firebaseConfig);
 export const FIREBASE_AUTH = getAuth(FIREBASE_APP);
+
+export const PROVIDER = new GoogleAuthProvider();
+
+globalThis.addEventListener('message', function({data}) {
+  if (data.initAuth) {
+    signInWithPopup(FIREBASE_AUTH, PROVIDER)
+      .then(sendResponse)
+      .catch(sendResponse)
+  }
+});

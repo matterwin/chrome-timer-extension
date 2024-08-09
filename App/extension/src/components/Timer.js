@@ -72,7 +72,9 @@ const Timer = ({ isAuthenticated }) => {
   return (
     <div className="centerScreenDiv">
       <div className="centerContent">
-        <h2 className="timerId" style={{ opacity: currentlyRunning ? 1 : 0.7 }}>{timer}</h2>
+        <div style={{ marginTop: '150px' }}>
+          <h2 className="timerId" style={{ opacity: currentlyRunning ? 1 : 0.7 }}>{timer}</h2>
+        </div>
         <div className="buttonsDiv">
           <Fab 
             sx={{ 

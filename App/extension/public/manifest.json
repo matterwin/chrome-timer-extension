@@ -10,11 +10,12 @@
     "tabs",
     "scripting",
     "identity",
-    "storage"
+    "storage",
+    "offscreen"
   ],
   "background": {
     "service_worker": "background.js",
     "type": "module"
-  }
+  } 
 }
 

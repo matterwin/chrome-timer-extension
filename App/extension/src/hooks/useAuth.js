@@ -15,11 +15,22 @@ const useAuth = () => {
         if (msg.action === 'signInUserResponse') {
           if (msg.status === 200) {
             dispatch(loginSuccess(msg.accessToken));
-            return { status: msg.status };
+            return { status: msg.status, accessToken: msg.accessToken };
           } else {
             return { status: msg.status, error: msg.error };
           }
-        } else if (msg.action === 'setUser') {
+        }
+
+        if (msg.action === 'registerUserResponse') {
+          if (msg.status === 201) {
+            dispatch(loginSuccess(msg.accessToken));
+            return { status: msg.status, accessToken: msg.accessToken};
+          } else {
+            return { status: msg.status, error: msg.error };
+          }
+        }
+
+        if (msg.action === 'setUser') {
           if (msg.status === 200) {
             dispatch(loginSuccess(msg.accessToken));
           }
@@ -40,6 +51,13 @@ const useAuth = () => {
       action: 'registerUser',
       email: email,
       password: password
+    });
+    return new Promise((resolve) => {
+      portRef.current.onMessage.addListener((msg) => {
+        if (msg.action === 'registerUserResponse') {
+          resolve(msg);
+        }
+      });
     });
   };
 
@@ -70,11 +88,17 @@ const useAuth = () => {
     portRef.current?.postMessage({ action: 'getUser' });
   };
 
+  const signInWithGoogle = () => {
+    connectPort();
+    portRef.current?.postMessage({ action: 'signInWithGoogle' });
+  };
+
   return {
     registerUser,
     signInUser,
     signOutUser,
-    getUser
+    getUser,
+    signInWithGoogle
   };
 };
 

@@ -1,5 +1,6 @@
 export default {
   bgColor: #2a3439,
+  #23383b
 
 
   deepgreen: '#091E22',

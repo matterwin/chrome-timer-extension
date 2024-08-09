@@ -151,7 +151,7 @@ exports.createFolder = async (folder_name, owner_id, parent_folder_id) => {
     const result = await client.query(insertFolderQuery, [folder_name, owner_id, parent_folder_id]);
 
     await client.query('COMMIT');
-    return { status: 200, id: result.rows[0].id };
+    return { status: 201, id: result.rows[0].id };
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('Error creating folder:', error);
@@ -162,18 +162,27 @@ exports.createFolder = async (folder_name, owner_id, parent_folder_id) => {
 };
 
 exports.createRootFolder = async (uuid) => {
+  const client = await pool.connect();
   try {
-    const insertFolderQuery = `
-      INSERT INTO times.time_folders (folder_name, owner_id)
-      VALUES ($1, $2) RETURNING id
-    `; 
+    await client.query('BEGIN');
 
-    const result = await pool.query(insertFolderQuery, ['root', uuid]);
+    // Create a new root folder
+    const createFolderQuery = `
+      INSERT INTO times.time_folders (owner_id, folder_name) 
+      VALUES ($1, 'root') RETURNING id;
+    `;
+    const folderRes = await client.query(createFolderQuery, [uuid]);
+    const rootFolderId = folderRes.rows[0].id;
 
-    return result.rows[0].id;
+    await client.query('COMMIT');
+    return { status: 201, id: rootFolderId };
   } catch (error) {
-    console.error(`Error creating root folder for ${uuid}`, error); 
-    throw error;
+    await client.query('ROLLBACK');
+    console.error('Error creating root folder:', error);
+    return { status: 500, message: 'Internal Server Error' };
+  } finally {
+    client.release();
   }
 };
+
 

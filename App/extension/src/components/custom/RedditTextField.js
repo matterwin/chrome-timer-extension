@@ -1,10 +1,6 @@
 import React from 'react';
 import { alpha, styled } from '@mui/material/styles';
-import InputBase from '@mui/material/InputBase';
-import Box from '@mui/material/Box';
-import InputLabel from '@mui/material/InputLabel';
 import TextField from '@mui/material/TextField';
-import FormControl from '@mui/material/FormControl';
 
 const RedditTextField = styled((props) => (
   <TextField
@@ -15,25 +11,33 @@ const RedditTextField = styled((props) => (
   '& .MuiFilledInput-root': {
     overflow: 'hidden',
     borderRadius: 4,
-    backgroundColor: '#FFFFE0',
+    backgroundColor: '#fffff0',
     width: '100%',
-    padding: '0px',
-    height: '35px',
+    height: '50px',
     '&:hover': {
-      backgroundColor: '#FFFFE0' 
+      backgroundColor: '#fffff0',
     },
     '&.Mui-focused': {
-      backgroundColor: '#FFFFE0',
+      backgroundColor: '#fffff0',
       boxShadow: `${alpha(theme.palette.primary.main, 0.25)} 0 0 0 2px`,
-      borderColor: theme.palette.primary.main
+      borderColor: theme.palette.primary.main,
     },
     '& input': {
-      fontSize: '1.0rem', 
-      paddingBottom: '0px'
+      fontSize: '15px',
+      color: 'darkgreen'
     },
     '& .MuiFormLabel-asterisk': {
-      display: 'none'
+      display: 'none',
     },
+  },
+  '& .MuiInputLabel-root': {
+    color: 'grey', 
+    fontSize: '15px',
+    paddingBottom: '10px',
+  },
+  '& .MuiInputLabel-root.Mui-focused': {
+    color: 'green', 
+    fontSize: '15px'
   },
 }));
 

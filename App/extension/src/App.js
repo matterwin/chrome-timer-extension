@@ -20,7 +20,7 @@ const App = () => {
   const { getUser } = useAuth();
 
   useEffect(() => {
-    getUser()
+    getUser();
   },[]);
 
   return (

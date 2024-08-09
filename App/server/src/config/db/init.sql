@@ -21,5 +21,12 @@ CREATE TABLE times.time_entries (
 );
 
 
-INSERT INTO times.time_folders (folder_name, owner_id, parent_folder_id)
-VALUES ('root', 'original_dummy_user', NULL);
+CREATE SCHEMA auth;
+
+-- Users --
+CREATE TABLE auth.users (
+  id VARCHAR(128) PRIMARY KEY,
+  root_folder_id INT NULL,
+  FOREIGN KEY (root_folder_id) REFERENCES times.time_folders(id)
+);
+

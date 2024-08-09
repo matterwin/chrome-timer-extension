@@ -1,0 +1,61 @@
+/*
+ * html structure of toastr
+  <div id="toast-container" class="toast-top-right">
+    <div class="toast toast-success">
+      <button type="button" class="toast-close-button" role="button">×</button>
+      <div class="toast-title">Title</div>
+      <div class="toast-message">Message</div>
+    </div>
+  </div>
+*/
+
+#toast-container > .toast {
+  background-color: #333; 
+  color: #fff; 
+  font-family: 'Arial', sans-serif; 
+  border-radius: 5px; 
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  opacity: 1;
+}
+
+#toast-container > .toast:hover,
+#toast-container > .toast:focus {
+  color: #fff; 
+  box-shadow: none;
+}
+
+#toast-container > .toast-success {
+  background-color: green; 
+}
+
+#toast-container > .toast-error {
+  background-color: red; 
+}
+
+#toast-container > .toast-info {
+  background-color: #17a2b8; 
+}
+
+#toast-container > .toast-warning {
+  background-color: #ffc107; 
+}
+
+.toast-title {
+  font-weight: bold; /* Customize title */
+}
+
+.toast-message {
+  font-size: 14px; /* Customize message font size */
+}
+
+.toast-close-button {
+  color: #fff; /* Customize close button color */
+}
+
+.toast-progress {
+  background-color: #ffc107; /* Customize progress bar color */
+}
+

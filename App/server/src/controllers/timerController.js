@@ -29,7 +29,7 @@ exports.createFolder = async (req, res) => {
 
     const folder = await timerService.createFolder(folder_name, owner_id, parent_folder_id);
 
-    if (folder.status != 200) {
+    if (folder.status != 201) {
       res.status(folder.status).json({ message: folder.message });
       return;
     }
