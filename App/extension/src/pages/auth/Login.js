@@ -30,6 +30,8 @@ const Login = (isAuthenticated) => {
   const { registerUser, signInUser, signInWithGoogle } = useAuth();
   const token = useSelector(state => state.auth.accessToken);
 
+  const [clickedLogin, setClickedLogin] = useState(false);
+
   const signIn = async () => {
     setLoading(true);
     try {
@@ -83,7 +85,8 @@ const Login = (isAuthenticated) => {
       return;
     }
     
-    signUp();
+    if (clickedLogin) signIn();
+    else signUp();
   };
 
   const handleBack = () => {
@@ -139,6 +142,7 @@ const Login = (isAuthenticated) => {
               required
             />
             <Button 
+              onClick={() => setClickedLogin(true)}
               type="submit"
               variant="outlined"
               sx={{
@@ -158,6 +162,7 @@ const Login = (isAuthenticated) => {
             </Button>
             <div className="center"><p style={{ color: 'white' }}>Forgot password?</p></div>
             <Button 
+              onClick={() => setClickedLogin(false)}
               type="submit"
               variant="outlined"
               sx={{

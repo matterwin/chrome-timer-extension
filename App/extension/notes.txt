@@ -1,0 +1,5 @@
+issue arises in frontend when the server may not be functioning properly and didn't create the root dir,
+yet it registers them in firebase. maybe delete account or do some type of promise.
+or just handle only user registration and not user login in the backend, so it can be apart of that big transaction.
+
+the same with the backend, but an easy fix is to do a transaction for everything 
