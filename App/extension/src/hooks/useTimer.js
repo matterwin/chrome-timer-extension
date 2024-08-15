@@ -30,6 +30,8 @@ const useTimer = () => {
   const stopTimer = () => portRef.current?.postMessage({ action: 'stopTimer' });
   const resetTimer = () => portRef.current?.postMessage({ action: 'resetTimer' });
   const saveTimer = () => portRef.current?.postMessage({ action: 'saveTime' });
+  const countUp = () => portRef.current?.postMessage({ action: 'countUp' });
+  const countDown = (seconds) => portRef.current?.postMessage({ action: 'countDown', seconds: seconds });
 
   return { 
     timer, 
@@ -38,7 +40,9 @@ const useTimer = () => {
     startTimer, 
     stopTimer, 
     resetTimer, 
-    saveTimer
+    saveTimer,
+    countUp,
+    countDown
   };
 };
 

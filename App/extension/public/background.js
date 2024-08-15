@@ -243,6 +243,19 @@ function handleAuthMessage(msg) {
   } 
 }
 
+let timeData = {
+  startTime: 0,
+  currTime: 0,
+  stopTime: 0,
+  totalPausedDuration: 0,
+  runningClockInterval: null,
+  formattedTime: '00 00 00',
+  countDownFromInSeconds: 0,
+  currentlyRunning: false,
+  countingDown: false, 
+  countdownTargetTime: 0
+};
+
 function handleTimerMessage(msg) {
   if (msg.action === "startTimer") {
     startTimer();
@@ -254,7 +267,16 @@ function handleTimerMessage(msg) {
     if (timerPort) timerPort.postMessage({ time: timeData.formattedTime });
   } else if (msg.action === "saveTime") {
     // in progress
-  } 
+  } else if (msg.action === "countDown") {
+    timeData.countingDown = true;
+    if (msg.seconds !== undefined) {
+      timeData.countDownFromInSeconds = msg.seconds;
+    }
+  } else if (msg.action === "countUp") {
+    timeData.countingDown = false;
+    countingDown: false;
+    countdownTargetTime: 0;
+  }
 }
 
 function handleFilesysMessage(msg) {
@@ -369,7 +391,6 @@ async function signInUser(email, password) {
   }
 }
 
-
 async function signOutUser() {
   console.log("Attempting to sign out user");
   try {
@@ -384,17 +405,6 @@ async function signOutUser() {
   }
 }
 
-
-let timeData = {
-  startTime: 0,
-  currTime: 0,
-  stopTime: 0,
-  totalPausedDuration: 0,
-  runningClockInterval: null,
-  formattedTime: '00 00 00',
-  currentlyRunning: false
-};
-
 function padZero(num) {
   return num < 10 ? '0' + num : num;
 }
@@ -407,13 +417,38 @@ function formatTime(seconds) {
 }
 
 function updateDisplayedTime() {
-  console.log("Current time: ", timeData.formattedTime);
   const currentTime = Date.now();
   timeData.currTime = currentTime;
 
-  const elapsed = timeData.currTime - timeData.startTime - timeData.totalPausedDuration;
-  timeData.formattedTime = formatTime(elapsed / 1000);
-  if (timerPort) timerPort.postMessage({ time: timeData.formattedTime });
+  if (timeData.countingDown) {
+    const elapsed = timeData.countDownFromInSeconds * 1000 - (currentTime - timeData.startTime - timeData.totalPausedDuration);
+    
+    if (elapsed <= 0) {
+      timeData.formattedTime = formatTime(0); 
+      resetTimer();
+      clearInterval(timeData.runningClockInterval);
+      timeData.currentlyRunning = false;
+      if (timerPort) timerPort.postMessage({ time: timeData.formattedTime, finished: true });
+    } else {
+      timeData.formattedTime = formatTime(elapsed / 1000);
+      if (timerPort) timerPort.postMessage({ time: timeData.formattedTime });
+    }
+  } else {
+    const elapsed = (currentTime - timeData.startTime - timeData.totalPausedDuration);
+    timeData.formattedTime = formatTime(elapsed / 1000);
+    if (timerPort) timerPort.postMessage({ time: timeData.formattedTime });
+  }
+}
+
+
+function startCountdown(durationInSeconds) {
+  timeData.countDownFromInSeconds = durationInSeconds; 
+  timeData.countingDown = true;
+}
+
+function startCountUp() {
+  timeData.countDownFromInSeconds = 0;
+  timeData.countingDown = false;
 }
 
 function startTimer() {
@@ -451,14 +486,17 @@ function resetTimer() {
   // if (!pollingIntervalId) startPolling();
   clearInterval(timeData.runningClockInterval);
   timeData = {
-    startTime: 0,
-    currTime: 0,
-    stopTime: 0,
-    totalPausedDuration: 0,
-    runningClockInterval: null,
-    formattedTime: '00 00 00',
-    currentlyRunning: false
-  };
+  startTime: 0,
+  currTime: 0,
+  stopTime: 0,
+  totalPausedDuration: 0,
+  runningClockInterval: null,
+  formattedTime: '00 00 00',
+  countDownFromInSeconds: 0,
+  currentlyRunning: false,
+  countingDown: false, 
+  countdownTargetTime: 0
+};
 
   if (timerPort) {
     timerPort.postMessage({ 

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { goTo } from 'react-chrome-extension-router';
 import Box from '@mui/material/Box';
 import Fab from '@mui/material/Fab';
@@ -13,6 +13,8 @@ import LoginRoundedIcon from '@mui/icons-material/LoginRounded';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import Tooltip from '@mui/material/Tooltip';
 import CToolTip from './CToolTip.js';
+import KeyboardDoubleArrowDownRoundedIcon from '@mui/icons-material/KeyboardDoubleArrowDownRounded';
+import KeyboardDoubleArrowUpRoundedIcon from '@mui/icons-material/KeyboardDoubleArrowUpRounded';
 
 import './Timer.css';
 import useTimer from '../hooks/useTimer.js';
@@ -28,8 +30,16 @@ const Timer = ({ isAuthenticated }) => {
     startTimer, 
     stopTimer, 
     resetTimer,
-    saveTimer
+    saveTimer,
+    countDown,
+    countUp
   } = useTimer();
+
+  const [timerInput, setTimerInput] = useState(timer);
+  const [userWantsToEditTimer, setUserWantsToEditTimer] = useState(false);
+  const [isCountingUp, setIsCountingUp] = useState(true);
+  const [isFocused, setIsFocused] = useState(false);
+  const inputRef = useRef(null);
 
   const {
     signOutUser
@@ -37,6 +47,13 @@ const Timer = ({ isAuthenticated }) => {
 
   const handleStart = () => {
     if (currentlyRunning) {
+      // maybe check if timerinput is also satifised and just call update time or some shit in backgroundjs
+      if (isCountingUp) {
+        // send back timer or some shit
+      } else {
+
+      }
+
       handleStop();
     } else {
       startTimer();
@@ -69,17 +86,73 @@ const Timer = ({ isAuthenticated }) => {
     goTo(Login, { isAuthenticated })
   };
 
+  const handleCountingSwitch = () => {
+    setIsCountingUp(!isCountingUp);
+    handleReset();
+    if (isCountingUp) {
+      countDown(3600);
+      // inputRef.current.focus();
+      // handleCountDown
+    } else {
+      countUp();
+      // handleCountUp
+    }
+  };
+
+  const handleTimeChange = (event) => {
+    setTimerInput(event.target.value); 
+  };
+
+  const handleTimerEditClicked = () => {
+    handleStop();
+    setTimerInput(timer);
+    setUserWantsToEditTimer(true);
+    inputRef.current.focus();
+  };
+
+  const handleInputFocus = () => {
+    setIsFocused(true);
+  };
+
+  const handleInputBlur = () => {
+    setIsFocused(false); 
+  };
+
   return (
     <div className="centerScreenDiv">
-      <div className="centerContent">
-        <div style={{ marginTop: '150px' }}>
-          <h2 className="timerId" style={{ opacity: currentlyRunning ? 1 : 0.7 }}>{timer}</h2>
+      <div className="centerContent" style={{ padding: '150px' }}>
+        <div>
+          <CToolTip 
+            title={isCountingUp ? "Count Down" : "Count Up"} 
+            color="#f8f8f8" 
+            textColor="black" 
+            placement="top"
+          >
+            <input
+              ref={inputRef}
+              className="timerId"
+              type="text"
+              value={isFocused ? timerInput : timer}
+              onChange={handleTimeChange}
+              onClick={handleTimerEditClicked}
+              style={{
+                opacity: currentlyRunning ? 1 : 0.7, 
+                background: 'none', 
+                border: 'none', 
+                outline: 'none', 
+                textAlign: 'center', 
+                width: '100%' 
+              }}
+              onFocus={handleInputFocus}  
+              onBlur={handleInputBlur}
+            />
+          </CToolTip>
         </div>
         <div className="buttonsDiv">
           <Fab 
             sx={{ 
               bgcolor: currentlyRunning ? 'red' : 'green', 
-              border: '1px solid',
+              border: '2px solid',
               borderColor: currentlyRunning ? 'orange' : 'limegreen',
               color: '#ffffff',
               borderRadius: '100%',
@@ -101,6 +174,7 @@ const Timer = ({ isAuthenticated }) => {
               bgcolor: timer !== '00 00 00' ? '#EEE8AA' : 'grey', 
               color: timer !== '00 00 00' ? 'grey' : '#2a3439',
               borderRadius: '100%',
+              border: '2px solid #5a5a5a',
               '&:hover': {
                 bgcolor: '#EEE800',
               },
@@ -111,6 +185,33 @@ const Timer = ({ isAuthenticated }) => {
           >
             <RestartAltRoundedIcon sx={{ fontSize: '35px' }}/>
           </Fab>
+          <CToolTip 
+            title={isCountingUp ? "Count Down" : "Count Up"} 
+            color="#f8f8f8" 
+            textColor="black" 
+            placement="top"
+          >
+            <Fab 
+              sx={{ 
+                bgcolor: 'grey', 
+                color: '#2a3439',
+                borderRadius: '100%',
+                border: '2px solid #5a5a5a',
+                '&:hover': {
+                  bgcolor: '#EEE800',
+                },
+                margin: '0 10px'
+              }} 
+              aria-label='Counting Switch' 
+              onClick={handleCountingSwitch}
+            >
+              {isCountingUp ?
+                <KeyboardDoubleArrowDownRoundedIcon sx={{ fontSize: '35px' }}/> 
+                :
+                <KeyboardDoubleArrowUpRoundedIcon sx={{ fontSize: '35px' }}/>
+              }
+            </Fab>
+          </CToolTip>
           {isAuthenticated &&
             <>
               <CToolTip title="File System" color="#f8f8f8" textColor="black" placement="top">
@@ -119,6 +220,7 @@ const Timer = ({ isAuthenticated }) => {
                     bgcolor: 'grey', 
                     color: '#2a3439',
                     borderRadius: '100%',
+                    border: '2px solid #5a5a5a',
                     '&:hover': {
                       bgcolor: '#EEE800',
                     },
@@ -136,6 +238,7 @@ const Timer = ({ isAuthenticated }) => {
                     bgcolor: timer !== '00 00 00' ? '#EEE8AA' : 'grey', 
                     color: timer !== '00 00 00' ? 'grey' : '#2a3439',
                     borderRadius: '100%',
+                    border: '2px solid #5a5a5a',
                     '&:hover': {
                       bgcolor: '#EEE800',
                     },
@@ -158,6 +261,7 @@ const Timer = ({ isAuthenticated }) => {
                 bgcolor: 'grey', 
                 color: '#2a3439',
                 borderRadius: '100%',
+                border: '2px solid #5a5a5a',
                 '&:hover': {
                   bgcolor: '#EEE800',
                   color: 'grey'
