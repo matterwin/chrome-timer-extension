@@ -24,11 +24,6 @@ import useTimer from '../../hooks/useTimer.js';
 import './FileSystem.css';
 
 const Header = ({ path, setPath }) => {
-  const { 
-    timer,
-    currentlyRunning
-  } = useTimer();
-
   const handleBackward = () => {
     goBack();
   };
@@ -77,23 +72,6 @@ const Header = ({ path, setPath }) => {
             }} 
             aria-label='Timer' 
           >
-            <p className="timerInFileSystem">Add time</p>
-          </Fab>
-          <Fab 
-            variant="extended"
-            sx={{ 
-              borderRadius: '5px',
-              bgcolor: 'transparent', 
-              color: 'green',
-              boxShadow: 'none',
-              '&:hover': {
-                bgcolor: 'darkgreen',
-              },
-              margin: '0 10px',
-              textTransform: 'none'
-            }} 
-            aria-label='Timer' 
-          >
             <p className="timerInFileSystem">Add folder</p>
           </Fab>
           <Fab 
@@ -111,7 +89,7 @@ const Header = ({ path, setPath }) => {
             aria-label='Timer' 
             onClick={handleGoToTimer}
           >
-            <p className="timerInFileSystem" style={{ opacity: currentlyRunning ? 1 : 0.7 }}>{timer}</p>
+            <p className="timerInFileSystem">00 00 00</p>
           </Fab>
         </div>
       </div>

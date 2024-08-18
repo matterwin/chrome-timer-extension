@@ -24,7 +24,9 @@ import Login from '../pages/auth/Login.js';
 
 const Timer = ({ isAuthenticated }) => {
   const { 
-    timer, 
+    hour, setHour,
+    min, setMin,
+    sec, setSec,
     currentlyRunning,
     setCurrentlyRunning,
     startTimer, 
@@ -35,11 +37,15 @@ const Timer = ({ isAuthenticated }) => {
     countUp
   } = useTimer();
 
-  const [timerInput, setTimerInput] = useState(timer);
-  const [userWantsToEditTimer, setUserWantsToEditTimer] = useState(false);
+  const [countDownAux, setCountDownAux] = useState(null);
   const [isCountingUp, setIsCountingUp] = useState(true);
   const [isFocused, setIsFocused] = useState(false);
-  const inputRef = useRef(null);
+
+  const [tempValue, setTempValue] = useState('00');
+  // tmp hold and onblur set it
+  const hourRef = useRef(null);
+  const minRef = useRef(null);
+  const secRef = useRef(null);
 
   const {
     signOutUser
@@ -47,13 +53,6 @@ const Timer = ({ isAuthenticated }) => {
 
   const handleStart = () => {
     if (currentlyRunning) {
-      // maybe check if timerinput is also satifised and just call update time or some shit in backgroundjs
-      if (isCountingUp) {
-        // send back timer or some shit
-      } else {
-
-      }
-
       handleStop();
     } else {
       startTimer();
@@ -67,10 +66,24 @@ const Timer = ({ isAuthenticated }) => {
   };
 
   const handleReset = () => {
-    if (timer !== '00 00 00') {
-      resetTimer();
-      setCurrentlyRunning(false);
+    resetTimer();
+    setCurrentlyRunning(false);
+  };
+
+  const switchToSeconds = () => {
+    const hours = parseInt(hour, 10); 
+    const minutes = parseInt(min, 10); 
+    const seconds = parseInt(sec, 10); 
+
+    const totalSeconds = hours * 3600 + minutes * 60 + seconds;
+
+    if (isCountingUp) {
+      countUp(totalSeconds);
+    } else {
+      countDown(totalSeconds);
     }
+
+    return totalSeconds;
   };
 
   const handleSave = () => {
@@ -87,66 +100,118 @@ const Timer = ({ isAuthenticated }) => {
   };
 
   const handleCountingSwitch = () => {
-    setIsCountingUp(!isCountingUp);
-    handleReset();
     if (isCountingUp) {
-      countDown(3600);
-      // inputRef.current.focus();
-      // handleCountDown
+      setIsCountingUp(false);
+      secRef.current.focus();
     } else {
       countUp();
-      // handleCountUp
+      setIsCountingUp(true);
+    }
+    handleReset();
+  };
+
+  const handleTimeChange = (event, setter) => {
+    const inputValue = event.target.value;
+    const numericValue = inputValue.replace(/[^0-9]/g, "");
+    let twoDigitValue = numericValue.slice(0, 2);
+
+    setter(twoDigitValue);
+  };
+
+  const handleKeyDown = (event, refPrev, refNext) => {
+    const cursorPosition = event.target.selectionStart;
+    const inputLength = event.target.value.length;
+
+    if (event.key === 'ArrowLeft' && cursorPosition === 0 && refPrev) {
+      refPrev.current.focus();
+    } else if (event.key === 'ArrowRight' && cursorPosition === inputLength && refNext) {
+      refNext.current.focus();
     }
   };
 
-  const handleTimeChange = (event) => {
-    setTimerInput(event.target.value); 
-  };
-
-  const handleTimerEditClicked = () => {
+  const handleInputFocus = (valueState) => {
+    setCountDownAux(`${hour} ${min} ${sec}`);
     handleStop();
-    setTimerInput(timer);
-    setUserWantsToEditTimer(true);
-    inputRef.current.focus();
+    setTempValue(valueState);
   };
 
-  const handleInputFocus = () => {
-    setIsFocused(true);
+  const handleInputBlur = (stateValue, setter) => {
+    if (stateValue === "") {
+      setter(tempValue);
+      return;
+    }
+
+
+    if (!isCountingUp) {
+      const formattedCurrentTime = `${hour} ${min} ${sec}`;
+      if (formattedCurrentTime === countDownAux) return;
+    }
+
+    setCountDownAux(`${hour} ${min} ${sec}`);
+    switchToSeconds();
   };
 
-  const handleInputBlur = () => {
-    setIsFocused(false); 
+  const colors = () => {
+    const formattedCurrentTime = `${hour} ${min} ${sec}`;
+    if (isCountingUp) {
+      return formattedCurrentTime !== '00 00 00';
+    } else {
+      return formattedCurrentTime !== countDownAux;
+    }
   };
 
   return (
     <div className="centerScreenDiv">
-      <div className="centerContent" style={{ padding: '150px' }}>
-        <div>
-          <CToolTip 
-            title={isCountingUp ? "Count Down" : "Count Up"} 
-            color="#f8f8f8" 
-            textColor="black" 
-            placement="top"
-          >
+      <div className="centerContent">
+        <div className="timerRow">
+          <div className="timerCol">
             <input
-              ref={inputRef}
+              ref={hourRef}
               className="timerId"
               type="text"
-              value={isFocused ? timerInput : timer}
-              onChange={handleTimeChange}
-              onClick={handleTimerEditClicked}
+              value={hour}
+              onChange={(e) => handleTimeChange(e, setHour)}
+              onKeyDown={(e) => handleKeyDown(e, null, minRef)}
               style={{
                 opacity: currentlyRunning ? 1 : 0.7, 
-                background: 'none', 
-                border: 'none', 
-                outline: 'none', 
-                textAlign: 'center', 
-                width: '100%' 
               }}
-              onFocus={handleInputFocus}  
-              onBlur={handleInputBlur}
+              onFocus={() => handleInputFocus(hour)}  
+              onBlur={() => handleInputBlur(hour, setHour)}
             />
-          </CToolTip>
+            <p className="timerIdentifer">hr</p>
+          </div>
+          <div className="timerCol">
+            <input
+              ref={minRef}
+              className="timerId"
+              type="text"
+              value={min}
+              onChange={(e) => handleTimeChange(e, setMin)}
+              onKeyDown={(e) => handleKeyDown(e, hourRef, secRef)}
+              style={{
+                opacity: currentlyRunning ? 1 : 0.7, 
+              }}
+              onFocus={() => handleInputFocus(min)}  
+              onBlur={() => handleInputBlur(min, setMin)}
+            />
+            <p className="timerIdentifer">min</p>
+          </div>
+          <div className="timerCol">
+            <input
+              ref={secRef}
+              className="timerId"
+              type="text"
+              value={sec}
+              onChange={(e) => handleTimeChange(e, setSec)}
+              onKeyDown={(e) => handleKeyDown(e, minRef, null)}
+              style={{
+                opacity: currentlyRunning ? 1 : 0.7, 
+              }}
+              onFocus={() => handleInputFocus(sec)}  
+              onBlur={() => handleInputBlur(sec, setSec)}
+            />
+            <p className="timerIdentifer">sec</p>
+          </div>
         </div>
         <div className="buttonsDiv">
           <Fab 
@@ -171,8 +236,8 @@ const Timer = ({ isAuthenticated }) => {
           </Fab>
           <Fab 
             sx={{ 
-              bgcolor: timer !== '00 00 00' ? '#EEE8AA' : 'grey', 
-              color: timer !== '00 00 00' ? 'grey' : '#2a3439',
+              bgcolor: colors() ? '#EEE8AA' : 'grey', 
+              color: colors() ? 'grey' : '#2a3439',
               borderRadius: '100%',
               border: '2px solid #5a5a5a',
               '&:hover': {
@@ -235,8 +300,8 @@ const Timer = ({ isAuthenticated }) => {
               <CToolTip title="Save time" color="#f8f8f8" textColor="black" placement="top">
                 <Fab 
                   sx={{ 
-                    bgcolor: timer !== '00 00 00' ? '#EEE8AA' : 'grey', 
-                    color: timer !== '00 00 00' ? 'grey' : '#2a3439',
+                    bgcolor: hour !== '00' && min !== '00' && sec !== '00' ? '#EEE8AA' : 'grey', 
+                    color: hour !== '00' && min !== '00' && sec !== '00' ? 'grey' : '#2a3439',
                     borderRadius: '100%',
                     border: '2px solid #5a5a5a',
                     '&:hover': {
@@ -247,7 +312,7 @@ const Timer = ({ isAuthenticated }) => {
                   aria-label="Save" 
                   onClick={handleSave}
                 >
-                  {timer === '00 00 00' ? 
+                  {hour === '00' && min === '00' && sec === '00' ? 
                     <FileDownloadOffRoundedIcon sx={{ fontSize: '35px' }}/>
                   : <FileDownloadRoundedIcon sx={{ fontSize: '35px' }}/>
                   }

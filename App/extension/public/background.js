@@ -203,8 +203,10 @@ chrome.runtime.onConnect.addListener((connectedPort) => {
 
     if (timerPort) {
       timerPort.postMessage({ 
-        time: timeData.formattedTime, 
-        currentlyRunning: timeData.currentlyRunning 
+        hours: timeData.hours,
+        minutes: timeData.minutes,
+        seconds: timeData.seconds,
+        currentlyRunning: timeData.currentlyRunning
       });
     }
 
@@ -249,11 +251,14 @@ let timeData = {
   stopTime: 0,
   totalPausedDuration: 0,
   runningClockInterval: null,
-  formattedTime: '00 00 00',
+  hours: '00',
+  minutes: '00',
+  seconds: '00',
+  countUpFromInSeconds: 0,
   countDownFromInSeconds: 0,
+  countUpFromInSeconds: 0,
   currentlyRunning: false,
   countingDown: false, 
-  countdownTargetTime: 0
 };
 
 function handleTimerMessage(msg) {
@@ -264,18 +269,19 @@ function handleTimerMessage(msg) {
   } else if (msg.action === "resetTimer") {
     resetTimer();
   } else if (msg.action === "getTime") {
-    if (timerPort) timerPort.postMessage({ time: timeData.formattedTime });
+    if (timerPort) {
+      timerPort.postMessage({ 
+        hours: timeData.hours,
+        minutes: timeData.minutes,
+        seconds: timeData.seconds,
+      });
+    }
   } else if (msg.action === "saveTime") {
     // in progress
   } else if (msg.action === "countDown") {
-    timeData.countingDown = true;
-    if (msg.seconds !== undefined) {
-      timeData.countDownFromInSeconds = msg.seconds;
-    }
+    startCountdown(msg.seconds);
   } else if (msg.action === "countUp") {
-    timeData.countingDown = false;
-    countingDown: false;
-    countdownTargetTime: 0;
+    startCountUp(msg.seconds);
   }
 }
 
@@ -353,7 +359,6 @@ async function registerUser(email, password) {
   }
 }
 
-
 async function signInUser(email, password) {
   try {
     const userCredential = await signInWithEmailAndPassword(FIREBASE_AUTH, email, password);
@@ -409,11 +414,18 @@ function padZero(num) {
   return num < 10 ? '0' + num : num;
 }
 
-function formatTime(seconds) {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const sec = Math.floor(seconds % 60);
-  return `${padZero(hours)} ${padZero(minutes)} ${padZero(sec)}`;
+function formatTime(durationInSeconds) {
+  const hours = Math.floor(durationInSeconds / 3600);
+  const minutes = Math.floor((durationInSeconds % 3600) / 60);
+  const seconds = Math.floor(durationInSeconds % 60);
+
+  const formattedHours = padZero(hours);
+  const formattedMinutes = padZero(minutes);
+  const formattedSeconds = padZero(seconds);
+
+  timeData.hours = formattedHours;
+  timeData.minutes = formattedMinutes;
+  timeData.seconds = formattedSeconds;
 }
 
 function updateDisplayedTime() {
@@ -422,33 +434,97 @@ function updateDisplayedTime() {
 
   if (timeData.countingDown) {
     const elapsed = timeData.countDownFromInSeconds * 1000 - (currentTime - timeData.startTime - timeData.totalPausedDuration);
+
+    formatTime(elapsed / 1000);
+    console.log(`Count down: ${timeData.hours} ${timeData.minutes} ${timeData.seconds}`);
     
-    if (elapsed <= 0) {
-      timeData.formattedTime = formatTime(0); 
-      resetTimer();
+    if (elapsed < 1000) {
+      console.log("finished ", timeData.formattedTime);
       clearInterval(timeData.runningClockInterval);
+
+      timeData.startTime = 0;
+      timeData.currTime = 0;
+      timeData.stopTime = 0;
+      timeData.hours ='00';
+      timeData.minutes = '00';
+      timeData.seconds = '00';
+      timeData.totalPausedDuration = 0;
+      timeData.runningClockInterval = null;
       timeData.currentlyRunning = false;
-      if (timerPort) timerPort.postMessage({ time: timeData.formattedTime, finished: true });
+
+      if (timerPort) {
+        timerPort.postMessage({ 
+          hours: '00',
+          minutes: '00',
+          seconds: '00',
+          currentlyRunning: false
+        });
+      }
     } else {
-      timeData.formattedTime = formatTime(elapsed / 1000);
-      if (timerPort) timerPort.postMessage({ time: timeData.formattedTime });
+      if (timerPort) timerPort.postMessage({ 
+        hours: timeData.hours,
+        minutes: timeData.minutes,
+        seconds: timeData.seconds,
+        time: timeData.formattedTime 
+      });
     }
   } else {
-    const elapsed = (currentTime - timeData.startTime - timeData.totalPausedDuration);
-    timeData.formattedTime = formatTime(elapsed / 1000);
-    if (timerPort) timerPort.postMessage({ time: timeData.formattedTime });
+    console.log(`Count up: ${timeData.hours} ${timeData.minutes} ${timeData.seconds}`);
+    const elapsed = timeData.countUpFromInSeconds * 1000 + (currentTime - timeData.startTime - timeData.totalPausedDuration);
+    formatTime(elapsed / 1000);
+
+    if (timerPort) timerPort.postMessage({ 
+      hours: timeData.hours,
+      minutes: timeData.minutes,
+      seconds: timeData.seconds,
+      time: timeData.formattedTime 
+    });
   }
+}
+
+function resetForCountingUpOrDown() {
+  clearInterval(timeData.runningClockInterval);
+  timeData.startTime = 0;
+  timeData.currTime = 0;
+  timeData.stopTime = 0;
+  timeData.totalPausedDuration = 0;
+  timeData.runningClockInterval = null;
+  timeData.currentlyRunning = false;
 }
 
 
 function startCountdown(durationInSeconds) {
+  resetForCountingUpOrDown();
   timeData.countDownFromInSeconds = durationInSeconds; 
   timeData.countingDown = true;
+  formatTime(durationInSeconds);
+
+  console.log("Count down initilization: ", timeData.countDownFromInSeconds);
+  if (timerPort) {
+    timerPort.postMessage({ 
+      hours: timeData.hours,
+      minutes: timeData.minutes,
+      seconds: timeData.seconds,
+      currentlyRunning: timeData.currentlyRunning 
+    });
+  }
 }
 
-function startCountUp() {
-  timeData.countDownFromInSeconds = 0;
+function startCountUp(durationInSeconds) {
+  resetForCountingUpOrDown();
+  timeData.countUpFromInSeconds = durationInSeconds;
   timeData.countingDown = false;
+  formatTime(durationInSeconds);
+
+  console.log("Count up initilization: ", timeData.countUpFromInSeconds);
+  if (timerPort) {
+    timerPort.postMessage({ 
+      hours: timeData.hours,
+      minutes: timeData.minutes,
+      seconds: timeData.seconds,
+      currentlyRunning: timeData.currentlyRunning 
+    });
+  }
 }
 
 function startTimer() {
@@ -478,31 +554,55 @@ function stopTimer() {
     clearInterval(timeData.runningClockInterval);
     // if (!pollingIntervalId) startPolling();
   }
-  if (timerPort) timerPort.postMessage({ time: timeData.formattedTime });
-}
-
-function resetTimer() {
-  console.log("Time reset");
-  // if (!pollingIntervalId) startPolling();
-  clearInterval(timeData.runningClockInterval);
-  timeData = {
-  startTime: 0,
-  currTime: 0,
-  stopTime: 0,
-  totalPausedDuration: 0,
-  runningClockInterval: null,
-  formattedTime: '00 00 00',
-  countDownFromInSeconds: 0,
-  currentlyRunning: false,
-  countingDown: false, 
-  countdownTargetTime: 0
-};
 
   if (timerPort) {
     timerPort.postMessage({ 
-      time: "00 00 00", 
+      hours: timeData.hours,
+      minutes: timeData.minutes,
+      seconds: timeData.seconds,
       currentlyRunning: timeData.currentlyRunning 
     });
+  }
+}
+
+function resetTimer() {
+  // if (!pollingIntervalId) startPolling();
+  console.log("Time reset");
+  clearInterval(timeData.runningClockInterval);
+
+  timeData.startTime = 0;
+  timeData.currTime = 0;
+  timeData.stopTime = 0;
+  timeData.totalPausedDuration = 0;
+  timeData.runningClockInterval = null;
+  timeData.currentlyRunning = false;
+
+  if (timeData.countingDown) {
+    formatTime(timeData.countDownFromInSeconds);
+
+    if (timerPort) {
+      timerPort.postMessage({ 
+        hours: timeData.hours,
+        minutes: timeData.minutes,
+        seconds: timeData.seconds,
+        currentlyRunning: timeData.currentlyRunning 
+      });
+    }
+  }
+  else {
+    timeData.countUpFromInSeconds = 0;
+    timeData.hours ='00';
+    timeData.minutes = '00';
+    timeData.seconds = '00';
+
+    if (timerPort) {
+      timerPort.postMessage({ 
+        hours: '00',
+        minutes: '00',
+        seconds: '00',
+        currentlyRunning: timeData.currentlyRunning
+      });
+    }
   }
 }
 
