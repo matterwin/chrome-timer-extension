@@ -259,6 +259,7 @@ let timeData = {
   countUpFromInSeconds: 0,
   currentlyRunning: false,
   countingDown: false, 
+  countDownFinished: false
 };
 
 function handleTimerMessage(msg) {
@@ -433,12 +434,14 @@ function updateDisplayedTime() {
   timeData.currTime = currentTime;
 
   if (timeData.countingDown) {
-    const elapsed = timeData.countDownFromInSeconds * 1000 - (currentTime - timeData.startTime - timeData.totalPausedDuration);
+    const elapsed = (timeData.countDownFromInSeconds * 1000) - (currentTime - timeData.startTime - timeData.totalPausedDuration);
 
-    formatTime(elapsed / 1000);
+    const remainingTimeInSeconds = Math.ceil(elapsed / 1000);
+    formatTime(remainingTimeInSeconds);
+    console.log(remainingTimeInSeconds);
     console.log(`Count down: ${timeData.hours} ${timeData.minutes} ${timeData.seconds}`);
     
-    if (elapsed < 1000) {
+    if (remainingTimeInSeconds === 0) {
       console.log("finished ", timeData.formattedTime);
       clearInterval(timeData.runningClockInterval);
 
@@ -457,7 +460,8 @@ function updateDisplayedTime() {
           hours: '00',
           minutes: '00',
           seconds: '00',
-          currentlyRunning: false
+          currentlyRunning: false,
+          countDownFinished: true
         });
       }
     } else {
@@ -514,6 +518,7 @@ function startCountUp(durationInSeconds) {
   resetForCountingUpOrDown();
   timeData.countUpFromInSeconds = durationInSeconds;
   timeData.countingDown = false;
+  timeData.currentlyRunning = false;
   formatTime(durationInSeconds);
 
   console.log("Count up initilization: ", timeData.countUpFromInSeconds);
@@ -576,6 +581,7 @@ function resetTimer() {
   timeData.totalPausedDuration = 0;
   timeData.runningClockInterval = null;
   timeData.currentlyRunning = false;
+  timeData.countDownFinished = false;
 
   if (timeData.countingDown) {
     formatTime(timeData.countDownFromInSeconds);
@@ -585,7 +591,8 @@ function resetTimer() {
         hours: timeData.hours,
         minutes: timeData.minutes,
         seconds: timeData.seconds,
-        currentlyRunning: timeData.currentlyRunning 
+        currentlyRunning: timeData.currentlyRunning,
+        countDownFinished: false
       });
     }
   }

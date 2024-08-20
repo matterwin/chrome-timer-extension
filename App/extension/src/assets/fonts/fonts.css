@@ -1,0 +1,9 @@
+@font-face {
+  font-family: 'Moderustic';
+  src: url('./moderustic/static/Moderustic-Regular.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Beiruti';
+  src: url('./Beiruti/static/Beiruti-Regular.ttf') format('truetype');
+}

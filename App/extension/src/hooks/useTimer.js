@@ -5,6 +5,8 @@ const useTimer = () => {
   const [min, setMin] = useState('00');
   const [sec, setSec] = useState('00');
 
+  const [countDownFinished, setCountDownFinished] = useState(false);
+
   const [currentlyRunning, setCurrentlyRunning] = useState(false);
   
   const portRef = useRef(null);
@@ -22,6 +24,10 @@ const useTimer = () => {
       }
       if (msg.seconds !== undefined) {
         setSec(msg.seconds);
+      }
+
+      if (msg.countDownFinished !== undefined) {
+        setCountDownFinished(msg.countDownFinished);
       }
 
       if (msg.currentlyRunning !== undefined) {
@@ -54,7 +60,8 @@ const useTimer = () => {
     resetTimer, 
     saveTimer,
     countUp,
-    countDown
+    countDown,
+    countDownFinished, setCountDownFinished
   };
 };
 

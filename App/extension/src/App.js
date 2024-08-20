@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Router, getComponentStack } from 'react-chrome-extension-router';
 import { Provider, useSelector } from 'react-redux';
 
+import '../src/assets/fonts/fonts.css';
 import './App.css';
 import Timer from './components/Timer.js';
 import useAuth from './hooks/useAuth.js';

@@ -16,6 +16,9 @@ import CToolTip from './CToolTip.js';
 import KeyboardDoubleArrowDownRoundedIcon from '@mui/icons-material/KeyboardDoubleArrowDownRounded';
 import KeyboardDoubleArrowUpRoundedIcon from '@mui/icons-material/KeyboardDoubleArrowUpRounded';
 
+import HourglassTopRoundedIcon from '@mui/icons-material/HourglassTopRounded';
+import HourglassBottomRoundedIcon from '@mui/icons-material/HourglassBottomRounded';
+
 import './Timer.css';
 import useTimer from '../hooks/useTimer.js';
 import useAuth from '../hooks/useAuth.js';
@@ -34,15 +37,19 @@ const Timer = ({ isAuthenticated }) => {
     resetTimer,
     saveTimer,
     countDown,
-    countUp
+    countUp,
+    countDownFinished, setCountDownFinished
   } = useTimer();
 
-  const [countDownAux, setCountDownAux] = useState(null);
+  const [countDownAux, setCountDownAux] = useState('00 00 00');
   const [isCountingUp, setIsCountingUp] = useState(true);
   const [isFocused, setIsFocused] = useState(false);
 
+  const [idle, setIdle] = useState(false);
+
+  const [tempTimer, setTempTimer] = useState('00 00 00');
   const [tempValue, setTempValue] = useState('00');
-  // tmp hold and onblur set it
+
   const hourRef = useRef(null);
   const minRef = useRef(null);
   const secRef = useRef(null);
@@ -55,7 +62,10 @@ const Timer = ({ isAuthenticated }) => {
     if (currentlyRunning) {
       handleStop();
     } else {
+      if (!isCountingUp && !countDownFinished && `${hour} ${min} ${sec}` === '00 00 00') return;
+
       startTimer();
+      setCountDownFinished(false);
       setCurrentlyRunning(true);
     }
   };
@@ -66,6 +76,11 @@ const Timer = ({ isAuthenticated }) => {
   };
 
   const handleReset = () => {
+    if (!isCountingUp) {
+      if (!countDownFinished && `${hour} ${min} ${sec}` === countDownAux) {
+        return;
+      } 
+    }
     resetTimer();
     setCurrentlyRunning(false);
   };
@@ -82,8 +97,6 @@ const Timer = ({ isAuthenticated }) => {
     } else {
       countDown(totalSeconds);
     }
-
-    return totalSeconds;
   };
 
   const handleSave = () => {
@@ -113,9 +126,16 @@ const Timer = ({ isAuthenticated }) => {
   const handleTimeChange = (event, setter) => {
     const inputValue = event.target.value;
     const numericValue = inputValue.replace(/[^0-9]/g, "");
-    let twoDigitValue = numericValue.slice(0, 2);
 
-    setter(twoDigitValue);
+    let updatedValue;
+    
+    if (numericValue.length > 2) {
+      updatedValue = numericValue.slice(-1);
+    } else {
+      updatedValue = numericValue;
+    }
+
+    setter(updatedValue);
   };
 
   const handleKeyDown = (event, refPrev, refNext) => {
@@ -130,38 +150,84 @@ const Timer = ({ isAuthenticated }) => {
   };
 
   const handleInputFocus = (valueState) => {
-    setCountDownAux(`${hour} ${min} ${sec}`);
     handleStop();
+    handleMouseEnter();
     setTempValue(valueState);
+    setTempTimer(`${hour} ${min} ${sec}`);
+    setIsFocused(true);
   };
 
   const handleInputBlur = (stateValue, setter) => {
-    if (stateValue === "") {
+    handleMouseLeave();
+    setIsFocused(false);
+    if (stateValue === "" || stateValue === tempValue) {
       setter(tempValue);
       return;
     }
 
-
     if (!isCountingUp) {
       const formattedCurrentTime = `${hour} ${min} ${sec}`;
-      if (formattedCurrentTime === countDownAux) return;
+      if (formattedCurrentTime === tempTimer) return;
     }
 
     setCountDownAux(`${hour} ${min} ${sec}`);
     switchToSeconds();
   };
 
-  const colors = () => {
-    const formattedCurrentTime = `${hour} ${min} ${sec}`;
-    if (isCountingUp) {
-      return formattedCurrentTime !== '00 00 00';
-    } else {
-      return formattedCurrentTime !== countDownAux;
+  const timeoutFadeId = useRef(null); 
+
+  const handleMouseEnter = () => {
+    setIdle(false); 
+    if (timeoutFadeId.current) {
+      clearTimeout(timeoutFadeId.current); 
     }
   };
 
+  useEffect(() => {
+    if (countDownFinished) {
+      handleMouseEnter(); 
+    }
+  },[countDownFinished])
+
+  const handleMouseLeave = () => {
+    if (!countDownFinished && !isFocused) {
+      timeoutFadeId.current = setTimeout(() => {
+        setIdle(true);
+      }, 7000); 
+    }
+  };
+
+  const colors = () => {
+    const formattedCurrentTime = `${hour} ${min} ${sec}`;
+    const isAtZero = sec === '00' && min === '00' && hour === '00'
+    if (isCountingUp) {
+      return !isAtZero;
+    } else {
+      if (countDownFinished) return true;
+      return !isAtZero && countDownAux !== `${hour} ${min} ${sec}`;
+    }
+  };
+
+  const getBackgroundColorStartStop = () => {
+    if (!isCountingUp && `${hour} ${min} ${sec}` === '00 00 00')
+      return 'grey';
+    return currentlyRunning ? 'red' : 'green';
+  };
+
+  const getBorderColorStartStop = () => {
+    if (!isCountingUp && `${hour} ${min} ${sec}` === '00 00 00') 
+      return '#5a5a5a';
+    return currentlyRunning ? 'orange' : 'limegreen';
+  };
+
+  const getTextColorStartStop = () => {
+    if (!isCountingUp && `${hour} ${min} ${sec}` === '00 00 00') 
+      return '#2a3439';
+    return '#fff';
+  };
+
   return (
-    <div className="centerScreenDiv">
+    <div className="centerScreenDiv" style={{ backgroundColor: countDownFinished ? 'red' : '#2a3439' }}>
       <div className="centerContent">
         <div className="timerRow">
           <div className="timerCol">
@@ -173,7 +239,7 @@ const Timer = ({ isAuthenticated }) => {
               onChange={(e) => handleTimeChange(e, setHour)}
               onKeyDown={(e) => handleKeyDown(e, null, minRef)}
               style={{
-                opacity: currentlyRunning ? 1 : 0.7, 
+                opacity: currentlyRunning ? 1 : 0.7,
               }}
               onFocus={() => handleInputFocus(hour)}  
               onBlur={() => handleInputBlur(hour, setHour)}
@@ -189,7 +255,7 @@ const Timer = ({ isAuthenticated }) => {
               onChange={(e) => handleTimeChange(e, setMin)}
               onKeyDown={(e) => handleKeyDown(e, hourRef, secRef)}
               style={{
-                opacity: currentlyRunning ? 1 : 0.7, 
+                opacity: currentlyRunning ? 1 : 0.7,
               }}
               onFocus={() => handleInputFocus(min)}  
               onBlur={() => handleInputBlur(min, setMin)}
@@ -205,7 +271,7 @@ const Timer = ({ isAuthenticated }) => {
               onChange={(e) => handleTimeChange(e, setSec)}
               onKeyDown={(e) => handleKeyDown(e, minRef, null)}
               style={{
-                opacity: currentlyRunning ? 1 : 0.7, 
+                opacity: currentlyRunning ? 1 : 0.7,
               }}
               onFocus={() => handleInputFocus(sec)}  
               onBlur={() => handleInputBlur(sec, setSec)}
@@ -213,18 +279,27 @@ const Timer = ({ isAuthenticated }) => {
             <p className="timerIdentifer">sec</p>
           </div>
         </div>
-        <div className="buttonsDiv">
+        <div 
+          className="buttonsDiv" 
+          style={{ opacity: idle ? 0.05 : 1 }} 
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+        >
           <Fab 
             sx={{ 
-              bgcolor: currentlyRunning ? 'red' : 'green', 
+              bgcolor: getBackgroundColorStartStop(), 
               border: '2px solid',
-              borderColor: currentlyRunning ? 'orange' : 'limegreen',
-              color: '#ffffff',
-              borderRadius: '100%',
+              borderColor: getBorderColorStartStop(),
+              color: getTextColorStartStop(),
+              borderRadius: '50%',
               '&:hover': {
                 bgcolor: currentlyRunning ? 'darkred' : 'darkgreen',
               },
-              margin: '0 10px'
+              margin: '0 10px',
+              minWidth: '50px',
+              minHeight: '50px',
+              maxWidth: '50px',
+              maxHeight: '50px'
             }} 
             aria-label={currentlyRunning ? 'Stop' : 'Start'} 
             onClick={handleStart}
@@ -236,14 +311,18 @@ const Timer = ({ isAuthenticated }) => {
           </Fab>
           <Fab 
             sx={{ 
-              bgcolor: colors() ? '#EEE8AA' : 'grey', 
-              color: colors() ? 'grey' : '#2a3439',
-              borderRadius: '100%',
+              bgcolor: 'grey', 
+              color: colors() ? '#fff' : '#2a3439',
+              borderRadius: '50%',
               border: '2px solid #5a5a5a',
               '&:hover': {
-                bgcolor: '#EEE800',
+                bgcolor: 'darkgrey',
               },
-              margin: '0 10px'
+              margin: '0 10px',
+              minWidth: '50px',
+              minHeight: '50px',
+              maxWidth: '50px',
+              maxHeight: '50px'
             }} 
             aria-label='Reset' 
             onClick={handleReset}
@@ -260,20 +339,24 @@ const Timer = ({ isAuthenticated }) => {
               sx={{ 
                 bgcolor: 'grey', 
                 color: '#2a3439',
-                borderRadius: '100%',
+                borderRadius: '50%',
                 border: '2px solid #5a5a5a',
                 '&:hover': {
-                  bgcolor: '#EEE800',
+                  bgcolor: 'darkgrey',
                 },
-                margin: '0 10px'
+                margin: '0 10px',
+                minWidth: '50px',
+                minHeight: '50px',
+                maxWidth: '50px',
+                maxHeight: '50px'
               }} 
               aria-label='Counting Switch' 
               onClick={handleCountingSwitch}
             >
               {isCountingUp ?
-                <KeyboardDoubleArrowDownRoundedIcon sx={{ fontSize: '35px' }}/> 
+                <HourglassBottomRoundedIcon sx={{ fontSize: '35px' }}/> 
                 :
-                <KeyboardDoubleArrowUpRoundedIcon sx={{ fontSize: '35px' }}/>
+                <HourglassTopRoundedIcon sx={{ fontSize: '35px' }}/>
               }
             </Fab>
           </CToolTip>
@@ -287,7 +370,7 @@ const Timer = ({ isAuthenticated }) => {
                     borderRadius: '100%',
                     border: '2px solid #5a5a5a',
                     '&:hover': {
-                      bgcolor: '#EEE800',
+                      bgcolor: 'darkgrey',
                     },
                     margin: '0 10px'
                   }} 
@@ -302,12 +385,16 @@ const Timer = ({ isAuthenticated }) => {
                   sx={{ 
                     bgcolor: hour !== '00' && min !== '00' && sec !== '00' ? '#EEE8AA' : 'grey', 
                     color: hour !== '00' && min !== '00' && sec !== '00' ? 'grey' : '#2a3439',
-                    borderRadius: '100%',
+                    borderRadius: '50%',
                     border: '2px solid #5a5a5a',
                     '&:hover': {
-                      bgcolor: '#EEE800',
+                      bgcolor: 'darkgrey',
                     },
-                    margin: '0 10px'
+                    margin: '0 10px',
+                    minWidth: '50px',
+                    minHeight: '50px',
+                    maxWidth: '50px',
+                    maxHeight: '50px',
                   }} 
                   aria-label="Save" 
                   onClick={handleSave}
@@ -325,13 +412,17 @@ const Timer = ({ isAuthenticated }) => {
               sx={{ 
                 bgcolor: 'grey', 
                 color: '#2a3439',
-                borderRadius: '100%',
+                borderRadius: '50%',
                 border: '2px solid #5a5a5a',
                 '&:hover': {
-                  bgcolor: '#EEE800',
-                  color: 'grey'
+                  bgcolor: 'darkgrey',
+                  color: '#fff'
                 },
                 margin: '0 10px',
+                minWidth: '50px',
+                minHeight: '50px',
+                maxWidth: '50px',
+                maxHeight: '50px',
                 textTransform: 'none'
               }} 
               aria-label="Login" 
@@ -347,11 +438,15 @@ const Timer = ({ isAuthenticated }) => {
               sx={{ 
                 bgcolor: 'transparent', 
                 color: 'grey',
-                borderRadius: '100%',
+                borderRadius: '50%',
                 '&:hover': {
                   bgcolor: '#EEE800',
                 },
-                margin: '0 10px'
+                margin: '0 10px',
+                minWidth: '50px',
+                minHeight: '50px',
+                maxWidth: '50px',
+                maxHeight: '50px',
               }} 
               aria-label="Sign out" 
               onClick={() => signOutUser()}
