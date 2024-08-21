@@ -41,6 +41,26 @@ async function setupOffscreenDocument(path) {
   }
 }
 
+async function playSound(source = './raidhorn_02.mp3', volume = 1) {
+  await createOffscreen();
+  await chrome.runtime.sendMessage({ play: { source, volume } });
+}
+
+async function stopSound() {
+  if (await chrome.offscreen.hasDocument()) {
+    await chrome.runtime.sendMessage({ stop: true });
+  }
+}
+
+async function createOffscreen() {
+    if (await chrome.offscreen.hasDocument()) return;
+    await chrome.offscreen.createDocument({
+        url: 'offscreen.html',
+        reasons: ['AUDIO_PLAYBACK'],
+        justification: 'testing' // details for using the API
+    });
+}
+
 async function closeOffscreenDocument() {
   if (!(await hasDocument())) {
     return;
@@ -158,7 +178,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 chrome.windows.onFocusChanged.addListener((windowId) => {
   if (windowId === chrome.windows.WINDOW_ID_NONE) {
     console.log("No window is focused.");
-    // if (!pollingIntervalId) startPolling();
+    if (!pollingIntervalId) startPolling();
   } else {
     chrome.windows.get(windowId, { populate: true }, (window) => {
       let isTrackedTabInFocus = false;
@@ -169,9 +189,9 @@ chrome.windows.onFocusChanged.addListener((windowId) => {
         }
       });
       if (isTrackedTabInFocus) {
-        // if (pollingIntervalId) stopPolling();
+        if (pollingIntervalId) stopPolling();
       } else {
-        // if (!pollingIntervalId) startPolling();
+        if (!pollingIntervalId) startPolling();
       }
     });
   }
@@ -181,7 +201,7 @@ chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
   if (trackedTabs.has(tabId) && trackedTabs.get(tabId) === urlToCheck) {
     resetTimer();
     trackedTabs.delete(tabId);
-    // if (pollingIntervalId) stopPolling();
+    if (pollingIntervalId) stopPolling();
   }
 });
 
@@ -297,7 +317,7 @@ function handleFilesysDisconnect() {
 
 function handleTimerDisconnect() {
   console.log('Timer port disconnected');
-  // if (pollingIntervalId) stopPolling();
+  if (!pollingIntervalId) startPolling();
   timerPort = null;
 }
 
@@ -442,6 +462,7 @@ function updateDisplayedTime() {
     console.log(`Count down: ${timeData.hours} ${timeData.minutes} ${timeData.seconds}`);
     
     if (remainingTimeInSeconds === 0) {
+      playSound();
       console.log("finished ", timeData.formattedTime);
       clearInterval(timeData.runningClockInterval);
 
@@ -534,7 +555,8 @@ function startCountUp(durationInSeconds) {
 
 function startTimer() {
   if (!timeData.currentlyRunning) {
-    // if (pollingIntervalId) stopPolling();
+    if (timeData.countingDown) stopSound();
+    if (pollingIntervalId) stopPolling();
     timeData.currentlyRunning = true;
 
     if (timeData.stopTime) {
@@ -557,7 +579,7 @@ function stopTimer() {
     console.log("Stopped time: ", timeData.formattedTime);
     timeData.stopTime = Date.now();
     clearInterval(timeData.runningClockInterval);
-    // if (!pollingIntervalId) startPolling();
+    if (!pollingIntervalId) startPolling();
   }
 
   if (timerPort) {
@@ -571,7 +593,8 @@ function stopTimer() {
 }
 
 function resetTimer() {
-  // if (!pollingIntervalId) startPolling();
+  if (!pollingIntervalId) startPolling();
+  if (timeData.countingDown) stopSound();
   console.log("Time reset");
   clearInterval(timeData.runningClockInterval);
 
