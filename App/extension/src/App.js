@@ -5,7 +5,6 @@ import { Provider, useSelector } from 'react-redux';
 import '../src/assets/fonts/fonts.css';
 import './App.css';
 import Timer from './components/Timer.js';
-import useAuth from './hooks/useAuth.js';
 import store from './redux/store.js';
 
 const AppWrapper = () => {
@@ -17,17 +16,10 @@ const AppWrapper = () => {
 }
 
 const App = () => {
-  const isAuthenticated = useSelector(state => state.auth.isAuthenticated);
-  const { getUser } = useAuth();
-
-  useEffect(() => {
-    getUser();
-  },[]);
-
   return (
     <div>
       <Router>
-        <Timer isAuthenticated={isAuthenticated} />
+        <Timer />
       </Router>
     </div>
   );

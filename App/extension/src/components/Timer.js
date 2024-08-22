@@ -21,11 +21,8 @@ import HourglassBottomRoundedIcon from '@mui/icons-material/HourglassBottomRound
 
 import './Timer.css';
 import useTimer from '../hooks/useTimer.js';
-import useAuth from '../hooks/useAuth.js';
-import FileSystem from '../pages/filesys/FileSystem.js';
-import Login from '../pages/auth/Login.js';
 
-const Timer = ({ isAuthenticated }) => {
+const Timer = () => {
   const { 
     hour, setHour,
     min, setMin,
@@ -53,10 +50,6 @@ const Timer = ({ isAuthenticated }) => {
   const hourRef = useRef(null);
   const minRef = useRef(null);
   const secRef = useRef(null);
-
-  const {
-    signOutUser
-  } = useAuth();
 
   const handleStart = () => {
     if (currentlyRunning) {
@@ -99,19 +92,6 @@ const Timer = ({ isAuthenticated }) => {
     }
   };
 
-  const handleSave = () => {
-    handleStop(); 
-    // saveTimer();
-  };
-
-  const handleFolders = () => {
-    goTo(FileSystem);
-  };
-
-  const handleAuth = () => {
-    goTo(Login, { isAuthenticated })
-  };
-
   const handleCountingSwitch = () => {
     if (isCountingUp) {
       setIsCountingUp(false);
@@ -130,7 +110,7 @@ const Timer = ({ isAuthenticated }) => {
     let updatedValue;
     
     if (numericValue.length > 2) {
-      updatedValue = numericValue.slice(-1);
+      updatedValue = numericValue.slice(-2);
     } else {
       updatedValue = numericValue;
     }
@@ -199,12 +179,12 @@ const Timer = ({ isAuthenticated }) => {
 
   const colors = () => {
     const formattedCurrentTime = `${hour} ${min} ${sec}`;
-    const isAtZero = sec === '00' && min === '00' && hour === '00'
+    const isAtZero = sec === '00' && min === '00' && hour === '00';
     if (isCountingUp) {
       return !isAtZero;
     } else {
       if (countDownFinished) return true;
-      return !isAtZero && countDownAux !== `${hour} ${min} ${sec}`;
+      return !isAtZero && countDownAux !== formattedCurrentTime;
     }
   };
 
@@ -330,7 +310,7 @@ const Timer = ({ isAuthenticated }) => {
             <RestartAltRoundedIcon sx={{ fontSize: '35px' }}/>
           </Fab>
           <CToolTip 
-            title={isCountingUp ? "Count Down" : "Count Up"} 
+            title={isCountingUp ? "Counting Up" : "Counting Down"} 
             color="#f8f8f8" 
             textColor="black" 
             placement="top"
@@ -354,107 +334,13 @@ const Timer = ({ isAuthenticated }) => {
               onClick={handleCountingSwitch}
             >
               {isCountingUp ?
-                <HourglassBottomRoundedIcon sx={{ fontSize: '35px' }}/> 
+                <KeyboardDoubleArrowUpRoundedIcon sx={{ fontSize: '35px' }}/> 
                 :
-                <HourglassTopRoundedIcon sx={{ fontSize: '35px' }}/>
+                <KeyboardDoubleArrowDownRoundedIcon sx={{ fontSize: '35px' }}/>
               }
             </Fab>
           </CToolTip>
-          {isAuthenticated &&
-            <>
-              <CToolTip title="File System" color="#f8f8f8" textColor="black" placement="top">
-                <Fab 
-                  sx={{ 
-                    bgcolor: 'grey', 
-                    color: '#2a3439',
-                    borderRadius: '100%',
-                    border: '2px solid #5a5a5a',
-                    '&:hover': {
-                      bgcolor: 'darkgrey',
-                    },
-                    margin: '0 10px'
-                  }} 
-                  aria-label="Folders" 
-                  onClick={handleFolders}
-                >
-                  <FolderRoundedIcon sx={{ fontSize: '35px' }}/>
-                </Fab>
-              </CToolTip>
-              <CToolTip title="Save time" color="#f8f8f8" textColor="black" placement="top">
-                <Fab 
-                  sx={{ 
-                    bgcolor: hour !== '00' && min !== '00' && sec !== '00' ? '#EEE8AA' : 'grey', 
-                    color: hour !== '00' && min !== '00' && sec !== '00' ? 'grey' : '#2a3439',
-                    borderRadius: '50%',
-                    border: '2px solid #5a5a5a',
-                    '&:hover': {
-                      bgcolor: 'darkgrey',
-                    },
-                    margin: '0 10px',
-                    minWidth: '50px',
-                    minHeight: '50px',
-                    maxWidth: '50px',
-                    maxHeight: '50px',
-                  }} 
-                  aria-label="Save" 
-                  onClick={handleSave}
-                >
-                  {hour === '00' && min === '00' && sec === '00' ? 
-                    <FileDownloadOffRoundedIcon sx={{ fontSize: '35px' }}/>
-                  : <FileDownloadRoundedIcon sx={{ fontSize: '35px' }}/>
-                  }
-                </Fab>
-              </CToolTip>
-            </>
-          }
-          {!isAuthenticated && 
-            <Fab 
-              sx={{ 
-                bgcolor: 'grey', 
-                color: '#2a3439',
-                borderRadius: '50%',
-                border: '2px solid #5a5a5a',
-                '&:hover': {
-                  bgcolor: 'darkgrey',
-                  color: '#fff'
-                },
-                margin: '0 10px',
-                minWidth: '50px',
-                minHeight: '50px',
-                maxWidth: '50px',
-                maxHeight: '50px',
-                textTransform: 'none'
-              }} 
-              aria-label="Login" 
-              onClick={handleAuth}
-            >
-              Login              
-            </Fab>
-          }
         </div>
-        {isAuthenticated && 
-          <CToolTip title="Sign out" color="#f8f8f8" textColor="black" placement="bottom">
-            <Fab 
-              sx={{ 
-                bgcolor: 'transparent', 
-                color: 'grey',
-                borderRadius: '50%',
-                '&:hover': {
-                  bgcolor: '#EEE800',
-                },
-                margin: '0 10px',
-                minWidth: '50px',
-                minHeight: '50px',
-                maxWidth: '50px',
-                maxHeight: '50px',
-              }} 
-              aria-label="Sign out" 
-              onClick={() => signOutUser()}
-            >
-              <LogoutOutlinedIcon sx={{ fontSize: '35px' }}/>
-            </Fab>
-          </CToolTip>
-        }
       </div>
     </div>
   );

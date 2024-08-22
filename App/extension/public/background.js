@@ -1,46 +1,3 @@
-console.log("-=-=-=-=-=-=-=-=-=-=-");
-console.log("Welcome to Hour Count");
-console.log("-=-=-=-=-=-=-=-=-=-=-");
-
-import { FIREBASE_APP, FIREBASE_AUTH,  } from './firebaseConfig.js';
-import { 
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged,
-  GoogleAuthProvider,
-  signInWithPopup
-} from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js';
-
-const OFFSCREEN_DOCUMENT_PATH = './offscreen.html';
-let creatingOffscreenDocument;
-let creating = null;
-
-async function hasDocument() {
-  const matchedClients = await clients.matchAll();
-  return matchedClients.some(
-    (c) => c.url === chrome.runtime.getURL(OFFSCREEN_DOCUMENT_PATH)
-  );
-}
-
-async function setupOffscreenDocument(path) {
-  if (!(await hasDocument())) {
-    if (creating) {
-      await creating;
-    } else {
-      creating = chrome.offscreen.createDocument({
-        url: path,
-        reasons: [
-            chrome.offscreen.Reason.DOM_SCRAPING
-        ],
-        justification: 'authentication'
-      });
-      await creating;
-      creating = null;
-    }
-  }
-}
-
 async function playSound(source = './raidhorn_02.mp3', volume = 1) {
   await createOffscreen();
   await chrome.runtime.sendMessage({ play: { source, volume } });
@@ -53,58 +10,16 @@ async function stopSound() {
 }
 
 async function createOffscreen() {
-    if (await chrome.offscreen.hasDocument()) return;
-    await chrome.offscreen.createDocument({
-        url: 'offscreen.html',
-        reasons: ['AUDIO_PLAYBACK'],
-        justification: 'testing' // details for using the API
-    });
-}
-
-async function closeOffscreenDocument() {
-  if (!(await hasDocument())) {
-    return;
-  }
-  await chrome.offscreen.closeDocument();
-}
-
-function getAuth() {
-  return new Promise(async (resolve, reject) => {
-    const auth = await chrome.runtime.sendMessage({
-      type: 'firebase-auth',
-      target: 'offscreen'
-    });
-    auth?.name !== 'FirebaseError' ? resolve(auth) : reject(auth);
-  })
-}
-
-async function firebaseAuth() {
-  await setupOffscreenDocument(OFFSCREEN_DOCUMENT_PATH);
-
-  const auth = await getAuth()
-    .then((FIREBASE_AUTH) => {
-      console.log('User Authenticated', auth);
-      return auth;
-    })
-    .catch(err => {
-      if (err.code === 'auth/operation-not-allowed') {
-        console.error('You must enable an OAuth provider in the Firebase' +
-                      ' console in order to use signInWithPopup. This sample' +
-                      ' uses Google by default.');
-      } else {
-        console.error(err);
-        return err;
-      }
-    })
-    .finally(closeOffscreenDocument)
-
-  return auth;
+  if (await chrome.offscreen.hasDocument()) return;
+  await chrome.offscreen.createDocument({
+    url: 'offscreen.html',
+    reasons: ['AUDIO_PLAYBACK'],
+    justification: 'countdown' 
+  });
 }
 
 const urlToCheck = chrome.runtime.getURL('index.html');
 let timerPort = null;
-let authPort = null;
-let filesysPort = null;
 
 let trackedTabs = new Map();
 
@@ -114,7 +29,6 @@ const POLL_INTERVAL = 15000; // 15000 needed to keep service worker active
 const startPolling = () => {
   pollingIntervalId = setInterval(() => {
     if (timerPort) {
-      console.log('pong');
       timerPort.postMessage({ action: 'ping' }); 
     }
   }, POLL_INTERVAL);
@@ -122,7 +36,6 @@ const startPolling = () => {
 
 const stopPolling = () => {
   if (pollingIntervalId) {
-    console.log("ping terminated");
     clearInterval(pollingIntervalId);
     pollingIntervalId = null;
   }
@@ -177,7 +90,6 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 // polling to update timer in background without inactivation
 chrome.windows.onFocusChanged.addListener((windowId) => {
   if (windowId === chrome.windows.WINDOW_ID_NONE) {
-    console.log("No window is focused.");
     if (!pollingIntervalId) startPolling();
   } else {
     chrome.windows.get(windowId, { populate: true }, (window) => {
@@ -185,7 +97,6 @@ chrome.windows.onFocusChanged.addListener((windowId) => {
       window.tabs.forEach((tab) => {
         if (trackedTabs.has(tab.id)) {
           isTrackedTabInFocus = true;
-          console.log(`Tab ${tab.id} is in the focused window.`);
         }
       });
       if (isTrackedTabInFocus) {
@@ -205,20 +116,9 @@ chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
   }
 });
 
-// Connected to port
+// Connect port
 chrome.runtime.onConnect.addListener((connectedPort) => {
-  if (connectedPort.name == "auth") {
-    console.log("authPort connected");
-    authPort = connectedPort;
-
-    // other way besides useeffect in appjs
-    // getUser(); 
-
-    authPort.onMessage.addListener(handleAuthMessage);
-    authPort.onDisconnect.addListener(handleAuthDisconnect);
-  }
   if (connectedPort.name == "timer") {
-    console.log("timerPort connected");
     timerPort = connectedPort;
 
     if (timerPort) {
@@ -230,40 +130,12 @@ chrome.runtime.onConnect.addListener((connectedPort) => {
       });
     }
 
-    // need different way to start polling
-    /* if (!pollingIntervalId) startPolling(); */
+    if (!pollingIntervalId) startPolling();
 
     timerPort.onMessage.addListener(handleTimerMessage);
     timerPort.onDisconnect.addListener(handleTimerDisconnect);
   }
-
-  if (connectedPort.name == "filesys") {
-    console.log("filesysPort connected");
-    filesysPort = connectedPort;
-
-    
-    // maybe on connect, send back entire file system
-    // like maybe do that with auth
-    
-
-    filesysPort.onMessage.addListener(handleFilesysMessage);
-    filesysPort.onDisconnect.addListener(handleFilesysDisconnect);
-  }
 });
-
-function handleAuthMessage(msg) {
-  if (msg.action === "registerUser") {
-    registerUser(msg.email, msg.password);
-  } else if (msg.action === "signInUser") {
-    signInUser(msg.email, msg.password);
-  } else if (msg.action === "getUser") {
-    getUser();
-  } else if (msg.action === "signOutUser") {
-    signOutUser();
-  } else if (msg.action === "signInWithGoogle") {
-    firebaseAuth(); 
-  } 
-}
 
 let timeData = {
   startTime: 0,
@@ -297,8 +169,6 @@ function handleTimerMessage(msg) {
         seconds: timeData.seconds,
       });
     }
-  } else if (msg.action === "saveTime") {
-    // in progress
   } else if (msg.action === "countDown") {
     startCountdown(msg.seconds);
   } else if (msg.action === "countUp") {
@@ -306,129 +176,9 @@ function handleTimerMessage(msg) {
   }
 }
 
-function handleFilesysMessage(msg) {
-  
-}
-
-function handleFilesysDisconnect() {
-  console.log('Filesys port disconnected');
-  filesysPort = null;
-}
-
 function handleTimerDisconnect() {
-  console.log('Timer port disconnected');
   if (!pollingIntervalId) startPolling();
   timerPort = null;
-}
-
-function handleAuthDisconnect() {
-  console.log('Auth port disconnected');
-  authPort = null;
-}
-
-function getUser() {
-  console.log("attempting to get user");
-  onAuthStateChanged(FIREBASE_AUTH, (user) => {
-    if (authPort && user) {
-      console.log("user is signed in", user);
-      authPort.postMessage({ action: 'setUser', status: 200, accessToken: user.accessToken });
-    }
-    else { 
-      console.log("user is not signed in");
-    }
-  });
-}
-
-async function registerUser(email, password) {
-  console.log("attempting to register user");
-  try {
-    const userCredential = await createUserWithEmailAndPassword(FIREBASE_AUTH, email, password);
-    console.log("User is now registered");
-
-    if (authPort) {
-      authPort.postMessage({
-        action: 'registerUserResponse',
-        status: 201,
-        accessToken: userCredential.user.accessToken
-      });
-    }
-  } catch (error) {
-    console.log(error);
-    let errorMessage;
-
-    switch (error.code) {
-      case 'auth/invalid-email':
-        errorMessage = 'Invalid email address!';
-        break;
-      case 'auth/email-already-in-use':
-        errorMessage = 'Email alreay in use';
-        break;
-      case 'auth/weak-password':
-        errorMessage = 'Password must be at least 6 characters';
-        break;
-      default:
-        errorMessage = 'Error signing in, please wait a few minutes.';
-    }
-
-    if (authPort) {
-      authPort.postMessage({
-        action: 'registerUserResponse',
-        status: 400,
-        error: errorMessage
-      });
-    }
-  }
-}
-
-async function signInUser(email, password) {
-  try {
-    const userCredential = await signInWithEmailAndPassword(FIREBASE_AUTH, email, password);
-    console.log("User signed in");
-
-    if (authPort) {
-      authPort.postMessage({
-        action: 'signInUserResponse',
-        status: 200,
-        accessToken: userCredential.user.accessToken
-      });
-    }
-  } catch (error) {
-    console.log(error);
-    let errorMessage;
-
-    switch (error.code) {
-      case 'auth/invalid-email':
-        errorMessage = 'Invalid email address!';
-        break;
-      case 'auth/invalid-credential':
-        errorMessage = 'Invalid credential!';
-        break;
-      default:
-        errorMessage = 'Error signing in, please wait a few minutes.';
-    }
-
-    if (authPort) {
-      authPort.postMessage({
-        action: 'signInUserResponse',
-        status: 401,
-        error: errorMessage
-      });
-    }
-  }
-}
-
-async function signOutUser() {
-  console.log("Attempting to sign out user");
-  try {
-    await signOut(FIREBASE_AUTH);
-    console.log('User signed out');
-
-    if (authPort) {
-      authPort.postMessage({ action: 'signOut' });
-    }
-  } catch (error) {
-    console.error('Error signing out:', error.message);
-  }
 }
 
 function padZero(num) {
@@ -458,12 +208,9 @@ function updateDisplayedTime() {
 
     const remainingTimeInSeconds = Math.ceil(elapsed / 1000);
     formatTime(remainingTimeInSeconds);
-    console.log(remainingTimeInSeconds);
-    console.log(`Count down: ${timeData.hours} ${timeData.minutes} ${timeData.seconds}`);
     
     if (remainingTimeInSeconds === 0) {
       playSound();
-      console.log("finished ", timeData.formattedTime);
       clearInterval(timeData.runningClockInterval);
 
       timeData.startTime = 0;
@@ -494,7 +241,6 @@ function updateDisplayedTime() {
       });
     }
   } else {
-    console.log(`Count up: ${timeData.hours} ${timeData.minutes} ${timeData.seconds}`);
     const elapsed = timeData.countUpFromInSeconds * 1000 + (currentTime - timeData.startTime - timeData.totalPausedDuration);
     formatTime(elapsed / 1000);
 
@@ -524,7 +270,6 @@ function startCountdown(durationInSeconds) {
   timeData.countingDown = true;
   formatTime(durationInSeconds);
 
-  console.log("Count down initilization: ", timeData.countDownFromInSeconds);
   if (timerPort) {
     timerPort.postMessage({ 
       hours: timeData.hours,
@@ -542,7 +287,6 @@ function startCountUp(durationInSeconds) {
   timeData.currentlyRunning = false;
   formatTime(durationInSeconds);
 
-  console.log("Count up initilization: ", timeData.countUpFromInSeconds);
   if (timerPort) {
     timerPort.postMessage({ 
       hours: timeData.hours,
@@ -576,7 +320,6 @@ function startTimer() {
 function stopTimer() {
   if (timeData.currentlyRunning) {
     timeData.currentlyRunning = false;
-    console.log("Stopped time: ", timeData.formattedTime);
     timeData.stopTime = Date.now();
     clearInterval(timeData.runningClockInterval);
     if (!pollingIntervalId) startPolling();
@@ -595,7 +338,6 @@ function stopTimer() {
 function resetTimer() {
   if (!pollingIntervalId) startPolling();
   if (timeData.countingDown) stopSound();
-  console.log("Time reset");
   clearInterval(timeData.runningClockInterval);
 
   timeData.startTime = 0;
@@ -643,8 +385,4 @@ function getTime() {
 function setTime(time) {
   timeData.formattedTime = time;
   return getTime();
-}
-
-function saveTime() {
-  
 }
