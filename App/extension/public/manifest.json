@@ -11,9 +11,9 @@
     "offscreen"
   ],
   "icons": {
-    "16": "./images/clock.png",
-    "48": "./images/clock.png",
-    "128": "./images/clock.png"
+    "16": "./images/128.png",
+    "48": "./images/128.png",
+    "128": "./images/128.png"
   },
   "background": {
     "service_worker": "background.js",
